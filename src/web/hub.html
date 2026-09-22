@@ -1,0 +1,278 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<!--META-->
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>A</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Geist+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:#09090b; --bg-2:#0c0c0f; --panel:#0f0f13; --panel-2:#15151b;
+    --border:rgba(255,255,255,.07); --border-2:rgba(255,255,255,.14);
+    --text:#e4e4e7; --text-2:#a1a1aa; --muted:#5f5f68;
+    --accent:#3b82f6; --up:#22c55e; --warn:#f59e0b; --down:#ef4444;
+    --code-bg:#101015; --hover:rgba(255,255,255,.04);
+    --shadow:0 8px 32px rgba(0,0,0,.55);
+  }
+  * { box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent; }
+  body {
+    background:var(--bg); color:var(--text); line-height:1.65; font-size:14px;
+    font-family:"Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Microsoft YaHei", sans-serif;
+  }
+  .mono { font-family:"Geist Mono", "JetBrains Mono", ui-monospace, Consolas, monospace; }
+  a { color:inherit; text-decoration:none; }
+  button { font-family:inherit; }
+
+  .statusbar {
+    position:sticky; top:0; z-index:10; height:38px; border-bottom:1px solid var(--border);
+    display:flex; align-items:center; gap:18px; padding:0 16px;
+    background:var(--bg); font-size:11px;
+  }
+  .sb-brand { font-weight:700; font-size:12px; letter-spacing:.4px; white-space:nowrap; }
+  .sb-brand .slash { color:var(--muted); }
+  .sb-brand .slash i { font-style:normal; color:var(--accent); }
+  .sb-ver { color:var(--muted); border:1px solid var(--border); border-radius:4px; padding:0 5px; font-size:9.5px;
+    cursor:default; user-select:none; }
+  .sb-sep { width:1px; height:14px; background:var(--border); }
+  .sb-item { color:var(--muted); display:flex; align-items:center; gap:6px; white-space:nowrap; }
+  .sb-item b { color:var(--text-2); font-weight:600; }
+  .sb-dot { width:6px; height:6px; border-radius:50%; display:inline-block; }
+  .sb-links { margin-left:auto; display:flex; gap:4px; }
+  .sb-link { color:var(--muted); padding:3px 10px; border:1px solid transparent; border-radius:6px; font-size:11px;
+    background:transparent; cursor:pointer; }
+  .sb-link:hover { color:var(--text); border-color:var(--border-2); }
+
+  .wrap { max-width:1100px; margin:0 auto; padding:0 20px; }
+
+  .hero { padding:64px 20px 36px; display:grid; grid-template-columns:1.25fr 1fr; gap:40px; align-items:center; }
+  .eyebrow { font-size:10px; letter-spacing:2.8px; color:var(--accent); font-weight:600; text-transform:uppercase; margin-bottom:14px; }
+  .hero h1 { font-size:42px; line-height:1.12; letter-spacing:-1.4px; font-weight:700; }
+  .hero h1 em { font-style:normal; color:var(--accent); }
+  .hero p.sub { color:var(--text-2); font-size:15px; max-width:520px; margin-top:16px; }
+  .cta { display:flex; gap:9px; margin-top:24px; flex-wrap:wrap; }
+  .btn-solid {
+    border:1px solid var(--accent); background:var(--accent); color:#fff; border-radius:8px;
+    padding:9px 18px; font-size:13px; font-weight:600; transition:filter .15s;
+  }
+  .btn-solid:hover { filter:brightness(1.12); }
+  .btn-ghost {
+    border:1px solid var(--border-2); background:transparent; color:var(--text-2); border-radius:8px;
+    padding:9px 18px; font-size:13px; font-weight:500; transition:border-color .15s, color .15s;
+  }
+  .btn-ghost:hover { border-color:var(--accent); color:var(--text); }
+  .hero-tags { display:flex; gap:7px; flex-wrap:wrap; margin-top:22px; }
+  .privacy-line { margin-top:12px; font-size:10.5px; color:var(--muted); letter-spacing:.2px; }
+  .htag { font-size:10px; color:var(--muted); border:1px solid var(--border); border-radius:5px; padding:2px 9px;
+    letter-spacing:.8px; }
+
+  .widget { border:1px solid var(--border); border-radius:13px; background:var(--panel); overflow:hidden;
+    box-shadow:var(--shadow); }
+  .widget-head { padding:11px 15px; border-bottom:1px solid var(--border); display:flex; align-items:center; gap:9px; }
+  .widget-head .t { font-size:10px; letter-spacing:2.2px; text-transform:uppercase; color:var(--text-2); font-weight:600; }
+  .widget-head .live { margin-left:auto; display:flex; align-items:center; gap:6px; font-size:9.5px;
+    color:var(--up); letter-spacing:1.5px; font-weight:600; }
+  .widget-head .live i { width:6px; height:6px; border-radius:50%; background:var(--up); animation:pulse 1.6s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.3} }
+  .widget-body { padding:14px 15px; }
+  .w-keys { display:grid; grid-template-columns:1fr 1fr; gap:7px 14px; margin-bottom:14px; }
+  .w-key { display:flex; align-items:center; gap:8px; font-size:11px; color:var(--text-2); }
+  .w-key i { width:7px; height:7px; border-radius:50%; flex-shrink:0; }
+  .w-key em { font-style:normal; color:var(--warn); font-size:10px; }
+  .w-key.off { opacity:.45; }
+  .w-spark { display:flex; align-items:flex-end; gap:2px; height:34px; margin-bottom:6px; }
+  .w-spark i { flex:1; background:var(--accent); opacity:.7; border-radius:1px; min-height:2px; }
+  .w-foot { display:flex; justify-content:space-between; font-size:10.5px; color:var(--muted); }
+  .w-foot b { color:var(--text-2); font-weight:600; }
+
+  .sec-label { font-size:10px; letter-spacing:2.8px; color:var(--muted); font-weight:600; text-transform:uppercase;
+    margin:44px 0 16px; }
+
+  .cards { display:grid; grid-template-columns:repeat(2, 1fr); gap:12px; padding-bottom:8px; }
+  .card { background:var(--panel); border:1px solid var(--border); border-radius:12px; overflow:hidden;
+    display:flex; flex-direction:column; transition:transform .18s, border-color .18s; }
+  .card:hover { transform:translateY(-3px); border-color:var(--accent); }
+  .vignette { background:var(--code-bg); border-bottom:1px solid var(--border); padding:13px 15px;
+    font-family:"Geist Mono", Consolas, monospace; font-size:10.5px; line-height:1.9; min-height:118px; }
+  .v-dim { color:var(--muted); }
+  .v-mut { color:var(--text-2); }
+  .v-acc { color:var(--accent); }
+  .v-up { color:var(--up); }
+  .v-warn { color:var(--warn); }
+  .card-body { padding:15px 16px 16px; display:flex; flex-direction:column; flex:1; }
+  .card-num { font-size:9.5px; font-weight:700; letter-spacing:2px; color:var(--accent); }
+  .card h3 { font-size:15.5px; margin:4px 0 5px; letter-spacing:-.2px; }
+  .card p { font-size:12px; color:var(--muted); flex:1; }
+  .open { margin-top:13px; font-size:12px; font-weight:600; color:var(--text-2); }
+  .card:hover .open { color:var(--accent); }
+
+  .steps { display:grid; grid-template-columns:repeat(3, 1fr); gap:11px; }
+  .step { border:1px solid var(--border); border-radius:11px; padding:15px 17px; background:var(--bg-2); }
+  .step .n { font-size:9.5px; font-weight:700; letter-spacing:2px; color:var(--accent); }
+  .step h3 { font-size:13.5px; margin:4px 0 5px; }
+  .step p { font-size:12px; color:var(--muted); }
+  .step code { background:var(--code-bg); border:1px solid var(--border); border-radius:4px; padding:0 5px;
+    font-family:"Geist Mono", Consolas, monospace; font-size:11px; color:var(--text-2); }
+
+  .family-foot { border-top:1px solid var(--border); margin-top:56px; }
+  .ff-grid { max-width:1100px; margin:0 auto; padding:36px 20px 28px; display:grid; grid-template-columns:1.4fr 1fr 1.5fr 1fr; gap:30px; }
+  .ff-logo { font-weight:700; font-size:15px; letter-spacing:.4px; }
+  .ff-logo span { color:var(--accent); }
+  .ff-mission { font-size:11.5px; color:var(--muted); margin-top:10px; line-height:1.7; max-width:260px; }
+  .ff-h { font-size:10px; letter-spacing:2px; text-transform:uppercase; color:var(--text-2); font-weight:600; margin-bottom:10px; }
+  .ff-col a { display:block; font-size:12px; color:var(--muted); padding:3px 0; transition:color .15s; }
+  .ff-col a:hover { color:var(--accent); }
+  .ff-soon { display:block; font-size:12px; color:var(--muted); opacity:.55; padding:3px 0; }
+  .ff-bar { border-top:1px solid var(--border); }
+  .ff-bar p { max-width:1100px; margin:0 auto; padding:14px 20px 26px; font-size:10.5px; color:var(--muted); line-height:1.8; }
+  .ff-bar a { color:var(--text-2); }
+  .ff-bar a:hover { color:var(--accent); }
+
+  @media (max-width: 940px) {
+    .hero { grid-template-columns:1fr; padding-top:44px; gap:28px; }
+    .hero h1 { font-size:30px; }
+    .cards, .steps { grid-template-columns:1fr; }
+    .ff-grid { grid-template-columns:1fr 1fr; gap:22px; }
+  }
+  @media (max-width: 620px) {
+    .ff-grid { grid-template-columns:1fr; }
+  }
+  ::-webkit-scrollbar { width:8px; height:8px; }
+  ::-webkit-scrollbar-thumb { background:var(--border); border-radius:99px; }
+  ::-webkit-scrollbar-thumb:hover { background:var(--border-2); }
+  ::-webkit-scrollbar-track { background:transparent; }
+</style>
+</head>
+<body>
+<header class="statusbar mono">
+  <a class="sb-brand" href="/">AEOX <span class="slash">// <i>CHAT</i></span></a>
+  <span class="sb-ver">v0.1-beta</span>
+  <span class="sb-sep"></span>
+  <span class="sb-item"><i class="sb-dot" style="background:var(--up)"></i><span data-i18n="sb.pool"></span> <b id="sbPool">—</b></span>
+  <span class="sb-item"><span data-i18n="sb.routed"></span> <b id="sbRouted">—</b></span>
+  <nav class="sb-links">
+    <a class="sb-link" href="/chat">chat</a>
+    <a class="sb-link" href="/engine">engine</a>
+    <button class="sb-link" id="langBtn" type="button">EN</button>
+  </nav>
+</header>
+
+<div class="wrap">
+  <div class="hero">
+    <div>
+      <div class="eyebrow mono" data-i18n="hub.eyebrow"></div>
+      <h1><span data-i18n="hub.h1a"></span> <em data-i18n="hub.h1b"></em></h1>
+      <p class="sub" data-i18n="hub.sub"></p>
+      <div class="cta">
+        <a class="btn-solid" href="/chat" data-i18n="hub.ctaChat"></a>
+        <a class="btn-ghost" href="/engine" data-i18n="hub.ctaEngine"></a>
+      </div>
+      <div class="hero-tags mono">
+        <span class="htag" style="color:var(--warn);border-color:var(--warn);font-weight:600;">BETA · TECH DEMO</span>
+        <span class="htag" data-i18n="hub.tagNoRetain"></span>
+        <span class="htag">NO ACCOUNT</span>
+        <span class="htag">DARK-ONLY</span>
+        <span class="htag">OPENAI-COMPATIBLE</span>
+        <span class="htag">LOCAL-FIRST</span>
+      </div>
+      <p class="privacy-line mono" data-i18n="hub.privacy"></p>
+    </div>
+
+    <div class="widget">
+      <div class="widget-head">
+        <span class="t mono" data-i18n="chat.engine"></span>
+        <span class="live mono"><i></i><span data-i18n="eng.live"></span></span>
+      </div>
+      <div class="widget-body">
+        <div class="w-keys mono" id="wKeys"></div>
+        <div class="w-spark" id="wSpark"></div>
+        <div class="w-foot mono">
+          <span data-i18n="hub.sparkLabel"></span>
+          <span><b id="wRouted">—</b> <span data-i18n="eng.routed"></span></span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="sec-label mono" data-i18n="hub.explore"></div>
+  <div class="cards">
+    <a class="card" href="/chat">
+      <div class="vignette">
+        <div><span class="v-acc">&gt;</span> <span class="v-mut">why multiple keys?</span></div>
+        <div class="v-dim">aeox // ai</div>
+        <div class="v-dim">resilience and cost control…</div>
+        <div><span class="v-warn">⟲ failover: qwen#03 429 → deepseek#02</span></div>
+        <div><span class="v-acc">[ deepseek-v3 ]</span> <span class="v-acc">[ key#02 ]</span> <span class="v-dim">[ 812ms ]</span> <span class="v-up">[ 200 OK ]</span></div>
+      </div>
+      <div class="card-body">
+        <div class="card-num mono">01 /</div>
+        <h3 data-i18n="hub.card1h"></h3>
+        <p data-i18n="hub.card1p"></p>
+        <span class="open" data-i18n="hub.open"></span>
+      </div>
+    </a>
+    <a class="card" href="/engine">
+      <div class="vignette">
+        <div><span class="v-dim">12:04:31</span> <span class="v-dim">ROUTE</span> <span class="v-mut">req #1042 → deepseek#01 · 200</span></div>
+        <div><span class="v-dim">12:04:33</span> <span class="v-warn">FAILOVER</span> <span class="v-mut">429 → retried · 200</span></div>
+        <div><span class="v-dim">12:04:36</span> <span class="v-warn">COOLDOWN</span> <span class="v-mut">qwen#03 · 60s</span></div>
+        <div><span class="v-dim">12:05:36</span> <span class="v-up">RECOVERED</span> <span class="v-mut">rejoined pool</span></div>
+      </div>
+      <div class="card-body">
+        <div class="card-num mono">02 /</div>
+        <h3 data-i18n="hub.card2h"></h3>
+        <p data-i18n="hub.card2p"></p>
+        <span class="open" data-i18n="hub.open"></span>
+      </div>
+    </a>
+  </div>
+
+  <div class="sec-label mono" data-i18n="hub.how"></div>
+  <div class="steps">
+    <div class="step"><div class="n mono" data-i18n="eng.step1n"></div><h3 data-i18n="eng.step1h"></h3>
+      <p data-i18n="hub.step1p"></p></div>
+    <div class="step"><div class="n mono" data-i18n="eng.step2n"></div><h3 data-i18n="eng.step2h"></h3>
+      <p data-i18n="eng.step2p"></p></div>
+    <div class="step"><div class="n mono" data-i18n="eng.step3n"></div><h3 data-i18n="eng.step3h"></h3>
+      <p data-i18n="eng.step3p"></p></div>
+  </div>
+</div>
+
+<footer class="family-foot">
+  <div class="ff-grid">
+    <div class="ff-col">
+      <div class="ff-logo">AEOX <span>Lab</span></div>
+      <p class="ff-mission" data-i18n="foot.mission"></p>
+    </div>
+    <div class="ff-col">
+      <div class="ff-h" data-i18n="foot.thisSite"></div>
+      <a href="/" data-i18n="foot.siteHub"></a>
+      <a href="/chat" data-i18n="foot.siteChat"></a>
+      <a href="/engine" data-i18n="foot.siteEngine"></a>
+      <a href="/demo/index.html" data-i18n="foot.siteDemo"></a>
+    </div>
+    <div class="ff-col">
+      <div class="ff-h">AEOX Network</div>
+      <a href="https://aeox.uk/" target="_blank" rel="noopener" data-i18n="foot.netAeox"></a>
+      <a href="https://anchor.aeox.uk/" target="_blank" rel="noopener" data-i18n="foot.netAnchor"></a>
+      <a href="https://cli.aeox.uk/" target="_blank" rel="noopener" data-i18n="foot.netCli"></a>
+      <a href="https://chat.aeox.uk/" target="_blank" rel="noopener" data-i18n="foot.netChat"></a>
+      <a href="https://shui.aeox.uk/" target="_blank" rel="noopener" data-i18n="foot.netShui"></a>
+    </div>
+    <div class="ff-col">
+      <div class="ff-h" data-i18n="foot.resources"></div>
+      <a href="https://go.aeox.uk/" target="_blank" rel="noopener" data-i18n="foot.hubGo"></a>
+      <span class="ff-soon" data-i18n="foot.premium"></span>
+      <a href="https://chat.aeox.uk/" target="_blank" rel="noopener">chat.aeox.uk</a>
+    </div>
+  </div>
+  <div class="ff-bar">
+    <p class="mono" data-i18n-html="foot.bar"></p>
+  </div>
+</footer>
+
+<script type="module" src="/assets/hub.js"></script>
+</body>
+</html>

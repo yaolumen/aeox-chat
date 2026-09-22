@@ -1,0 +1,669 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AEOX Chat — Demo · Chat</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>A</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Geist+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:#09090b; --bg-2:#0c0c0f; --panel:#0f0f13; --panel-2:#15151b;
+    --border:rgba(255,255,255,.07); --border-2:rgba(255,255,255,.14);
+    --text:#e4e4e7; --text-2:#a1a1aa; --muted:#5f5f68;
+    --accent:#3b82f6; --up:#22c55e; --warn:#f59e0b; --down:#ef4444;
+    --code-bg:#101015; --hover:rgba(255,255,255,.04);
+    --shadow:0 8px 32px rgba(0,0,0,.55);
+    --blur:saturate(160%) blur(14px); --glass:rgba(15,15,19,.72);
+  }
+  * { box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent; }
+  html, body { height:100%; }
+  body {
+    background:var(--bg); color:var(--text); line-height:1.65; font-size:14px;
+    font-family:"Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  }
+  .mono { font-family:"Geist Mono", "JetBrains Mono", ui-monospace, Consolas, monospace; }
+  a { color:inherit; text-decoration:none; }
+
+  .app { display:flex; flex-direction:column; height:100vh; height:100dvh; }
+
+  .statusbar {
+    height:38px; flex-shrink:0; border-bottom:1px solid var(--border);
+    display:flex; align-items:center; gap:18px; padding:0 16px;
+    background:var(--bg); font-size:11px;
+  }
+  .sb-brand { font-weight:700; font-size:12px; letter-spacing:.4px; white-space:nowrap; }
+  .sb-brand .slash { color:var(--muted); }
+  .sb-brand .slash i { font-style:normal; color:var(--accent); }
+  .sb-ver { color:var(--muted); border:1px solid var(--border); border-radius:4px; padding:0 5px; font-size:9.5px; }
+  .sb-sep { width:1px; height:14px; background:var(--border); }
+  .sb-item { color:var(--muted); display:flex; align-items:center; gap:6px; white-space:nowrap; }
+  .sb-item b { color:var(--text-2); font-weight:600; }
+  .sb-dot { width:6px; height:6px; border-radius:50%; display:inline-block; }
+  .sb-links { margin-left:auto; display:flex; gap:4px; }
+  .sb-link { color:var(--muted); padding:3px 10px; border:1px solid transparent; border-radius:6px; font-size:11px; }
+  .sb-link:hover { color:var(--text); border-color:var(--border-2); }
+  .sb-link.here { color:var(--accent); border-color:var(--accent); }
+
+  .body { flex:1; display:flex; min-height:0; }
+
+  .rail {
+    width:198px; flex-shrink:0; border-right:1px solid var(--border);
+    background:var(--bg-2); display:flex; flex-direction:column; padding:14px 10px 12px;
+  }
+  .new-chat {
+    width:100%; border:1px solid var(--border-2); background:transparent; color:var(--text);
+    border-radius:8px; padding:7px 10px; cursor:pointer; font-size:12.5px; font-weight:500;
+    display:flex; align-items:center; justify-content:center; gap:7px; font-family:inherit;
+    transition:border-color .15s, background .15s;
+  }
+  .new-chat:hover { border-color:var(--accent); background:var(--hover); }
+  .new-chat svg { width:13px; height:13px; }
+  .rail-label { font-size:9.5px; color:var(--muted); text-transform:uppercase; letter-spacing:2.2px; margin:16px 8px 6px; }
+  .conv-list { flex:1; overflow-y:auto; }
+  .conv {
+    padding:6px 9px; border-radius:6px; font-size:12px; color:var(--muted);
+    cursor:pointer; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-bottom:1px;
+    border-left:2px solid transparent;
+  }
+  .conv:hover { color:var(--text); background:var(--hover); }
+  .conv.active { color:var(--text); border-left-color:var(--accent); background:var(--hover); }
+  .rail-foot { border-top:1px solid var(--border); padding-top:10px; margin-top:8px; }
+  .quota-row { display:flex; justify-content:space-between; font-size:10.5px; color:var(--muted); padding:0 8px 5px; }
+  .quota-row b { color:var(--text-2); font-weight:600; }
+  .quota-bar { height:3px; border-radius:99px; background:var(--border); margin:0 8px 9px; overflow:hidden; }
+  .quota-bar i { display:block; height:100%; border-radius:99px; background:var(--up); transition:width .4s, background .4s; }
+  .quota-bar i.hot { background:var(--warn); }
+  .quota-bar i.full { background:var(--down); }
+  .anon { font-size:10px; color:var(--muted); padding:0 8px; display:flex; align-items:center; gap:6px; }
+  .anon::before { content:""; width:5px; height:5px; border-radius:50%; background:var(--up); flex-shrink:0; }
+
+  .stream { flex:1; display:flex; flex-direction:column; min-width:0; }
+  .msgs { flex:1; overflow-y:auto; padding:28px 0 10px; }
+  .msg-col { max-width:720px; margin:0 auto; padding:0 22px; display:flex; flex-direction:column; gap:24px; }
+
+  .m-user {
+    align-self:flex-end; max-width:76%; font-size:13.5px; color:var(--text-2);
+    display:flex; gap:9px; justify-content:flex-end;
+  }
+  .m-user .pfx { color:var(--accent); flex-shrink:0; font-size:13px; }
+  .m-user .u-txt { border-left:2px solid var(--border-2); padding-left:12px; text-align:left; }
+
+  .m-ai { max-width:100%; }
+  .ai-head { display:flex; align-items:center; gap:8px; margin-bottom:8px; }
+  .ai-mark { width:16px; height:16px; border-radius:4px; background:var(--accent); color:#fff;
+    display:flex; align-items:center; justify-content:center; font-size:9px; font-weight:800; }
+  .ai-name { font-size:10px; color:var(--muted); text-transform:uppercase; letter-spacing:2px; }
+  .msg-text { font-size:14px; }
+  .msg-text p { margin-bottom:10px; }
+  .msg-text p:last-child { margin-bottom:0; }
+  .msg-text ul { margin:4px 0 12px 20px; }
+  .msg-text li { margin-bottom:4px; }
+  .msg-text strong { color:var(--accent); font-weight:600; }
+  .msg-text .ic { background:var(--code-bg); border:1px solid var(--border); border-radius:4px; padding:1px 6px; font-size:12.5px;
+    font-family:"Geist Mono", Consolas, monospace; }
+  .code { background:var(--code-bg); border:1px solid var(--border); border-radius:9px; padding:13px 15px;
+    overflow-x:auto; margin:8px 0 12px; position:relative;
+    font-family:"Geist Mono", Consolas, monospace; font-size:12.5px; line-height:1.6; }
+  .code::before { content:"CODE"; position:absolute; top:7px; right:11px; font-size:8.5px; letter-spacing:2px;
+    color:var(--muted); opacity:.6; }
+
+  .fev {
+    font-size:11px; color:var(--warn); border-left:2px solid var(--warn);
+    padding:2px 0 2px 11px; margin:10px 0 2px;
+  }
+  .fev b { color:var(--text-2); font-weight:600; }
+
+  .erow { display:flex; gap:4px; margin-top:10px; flex-wrap:wrap;
+    font-family:"Geist Mono", Consolas, monospace; font-size:11px; }
+  .eb { color:var(--muted); padding:1px 2px; position:relative; }
+  .eb::before { content:"[ "; color:var(--border-2); }
+  .eb::after { content:" ]"; color:var(--border-2); }
+  .eb.key { color:var(--accent); cursor:default; }
+  .eb.key:hover::before, .eb.key:hover::after { color:var(--accent); }
+  .eb.ok { color:var(--up); }
+  .eb.trace { color:var(--muted); cursor:pointer; }
+  .eb.trace:hover { color:var(--text); }
+  .eb.trace:hover::before, .eb.trace:hover::after { color:var(--text); }
+  .eb .tip {
+    display:none; position:absolute; bottom:calc(100% + 7px); left:8px; z-index:6;
+    background:var(--panel); border:1px solid var(--border-2); border-radius:7px;
+    padding:6px 10px; font-size:10.5px; white-space:nowrap; color:var(--muted);
+    box-shadow:var(--shadow);
+  }
+  .eb.key:hover .tip { display:block; }
+  .eb .tip b { color:var(--text); font-weight:600; }
+  .trace-box {
+    display:none; background:var(--code-bg); border:1px solid var(--border); border-radius:8px;
+    margin-top:9px; padding:11px 13px; font-size:11px; line-height:1.7; overflow-x:auto;
+    color:var(--text-2); white-space:pre;
+  }
+  .trace-box.open { display:block; }
+  .trace-box .td { color:var(--muted); }
+  .trace-box .tok { color:var(--up); }
+
+  .notice { align-self:center; font-size:11.5px; color:var(--down); border:1px solid var(--down);
+    border-radius:7px; padding:5px 13px; background:var(--panel); }
+  .typing { display:inline-flex; gap:5px; padding:5px 2px; }
+  .typing i { width:6px; height:6px; border-radius:50%; background:var(--muted); animation:tp 1.2s infinite; }
+  .typing i:nth-child(2){ animation-delay:.2s } .typing i:nth-child(3){ animation-delay:.4s }
+  @keyframes tp { 0%,60%,100%{opacity:.25} 30%{opacity:1} }
+  .cur { display:inline-block; width:8px; height:15px; background:var(--accent);
+    vertical-align:-2px; margin-left:2px; animation:blink 1s steps(2) infinite; }
+  @keyframes blink { 0%{opacity:1} 50%{opacity:0} 100%{opacity:1} }
+
+  .welcome { max-width:600px; margin:9vh auto 0; text-align:center; padding:0 22px; }
+  .welcome .ai-mark { width:44px; height:44px; border-radius:11px; font-size:19px; margin:0 auto 20px; }
+  .welcome h2 { font-size:22px; letter-spacing:-.4px; margin-bottom:8px; font-weight:600; }
+  .welcome .wline { font-size:10px; letter-spacing:2.8px; color:var(--muted); text-transform:uppercase; margin-bottom:26px; }
+  .sugg { display:grid; grid-template-columns:1fr 1fr; gap:8px; text-align:left; }
+  .sugg button {
+    border:1px solid var(--border); background:transparent; color:var(--text-2); border-radius:8px;
+    padding:10px 12px; font-size:12.5px; cursor:pointer; font-family:inherit; text-align:left;
+    transition:border-color .15s, background .15s;
+  }
+  .sugg button:hover { border-color:var(--accent); background:var(--hover); color:var(--text); }
+  .sugg button::before { content:"> "; color:var(--accent); font-family:"Geist Mono", Consolas, monospace; }
+  .sugg small { display:block; color:var(--muted); font-size:10.5px; margin-top:2px; }
+
+  .composer-wrap { flex-shrink:0; padding:6px 22px 16px; }
+  .composer {
+    max-width:720px; margin:0 auto; background:var(--glass); backdrop-filter:var(--blur);
+    -webkit-backdrop-filter:var(--blur); border:1px solid var(--border-2); border-radius:12px;
+    padding:12px 13px 8px; box-shadow:var(--shadow); transition:border-color .15s;
+  }
+  .composer:focus-within { border-color:var(--accent); }
+  .composer textarea {
+    width:100%; border:none; background:transparent; color:var(--text); font-size:14px; font-family:inherit;
+    resize:none; outline:none; height:22px; max-height:150px; line-height:22px;
+  }
+  .composer textarea::placeholder { color:var(--muted); }
+  .c-foot { display:flex; align-items:center; gap:10px; margin-top:7px; }
+  .modes { display:flex; gap:4px; }
+  .mode {
+    border:1px solid transparent; background:transparent; color:var(--muted); border-radius:5px;
+    padding:2px 9px; font-size:11px; cursor:pointer; font-family:"Geist Mono", Consolas, monospace;
+    letter-spacing:.3px; transition:color .15s, border-color .15s;
+  }
+  .mode:hover { color:var(--text); }
+  .mode.active { color:var(--accent); border-color:var(--accent); }
+  .c-hints { margin-left:auto; display:flex; align-items:center; gap:5px; font-size:10px; color:var(--muted); }
+  .kbd {
+    border:1px solid var(--border-2); border-bottom-width:2px; border-radius:4px;
+    padding:0 5px; font-size:9.5px; font-family:"Geist Mono", Consolas, monospace; color:var(--muted);
+  }
+  .send {
+    width:30px; height:30px; border-radius:7px; border:1px solid var(--accent); background:var(--accent);
+    color:#fff; cursor:pointer; display:flex; align-items:center; justify-content:center;
+    flex-shrink:0; transition:filter .15s;
+  }
+  .send:hover { filter:brightness(1.12); }
+  .send svg { width:14px; height:14px; }
+  .composer-note { max-width:720px; margin:8px auto 0; text-align:center; font-size:10px; color:var(--muted);
+    font-family:"Geist Mono", Consolas, monospace; letter-spacing:.3px; }
+
+  .engine {
+    width:248px; flex-shrink:0; border-left:1px solid var(--border);
+    background:var(--bg-2); display:flex; flex-direction:column; padding:14px 12px 12px; overflow-y:auto;
+  }
+  .eng-head { display:flex; align-items:center; gap:8px; font-size:10px; letter-spacing:2.2px;
+    color:var(--text-2); text-transform:uppercase; margin-bottom:12px; }
+  .eng-head i { width:7px; height:7px; border-radius:50%; background:var(--up); animation:pulse 1.8s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.3} }
+  .eng-sec { font-size:9.5px; color:var(--muted); text-transform:uppercase; letter-spacing:2.2px; margin:16px 0 7px; }
+  .krow { display:flex; align-items:center; gap:8px; padding:5px 7px; border-radius:6px; font-size:11.5px; }
+  .krow:hover { background:var(--hover); }
+  .krow .dot { width:7px; height:7px; border-radius:50%; flex-shrink:0; }
+  .dot.up { background:var(--up); }
+  .dot.warn { background:var(--warn); animation:pulse 1.6s infinite; }
+  .dot.down { background:var(--down); }
+  .krow .kname { color:var(--text-2); flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .krow .kname em { font-style:normal; color:var(--warn); }
+  .krow .kreq { color:var(--muted); font-size:10.5px; }
+  .krow.off { opacity:.45; }
+  .spark { display:flex; align-items:flex-end; gap:2px; height:30px; padding:0 7px; }
+  .spark i { flex:1; background:var(--accent); opacity:.7; border-radius:1px; min-height:2px; }
+  .spark.amber i { background:var(--warn); }
+  .spark-val { display:flex; justify-content:space-between; padding:5px 7px 0; font-size:10.5px; color:var(--muted); }
+  .spark-val b { color:var(--text-2); font-weight:600; }
+  .eng-foot { margin-top:auto; padding-top:14px; }
+  .eng-foot a { display:block; text-align:center; font-size:11px; color:var(--muted); border:1px solid var(--border);
+    border-radius:7px; padding:6px 0; transition:color .15s, border-color .15s; }
+  .eng-foot a:hover { color:var(--accent); border-color:var(--accent); }
+
+  @media (max-width: 1120px) { .engine { display:none; } }
+  @media (max-width: 800px) { .rail { display:none; } .sugg { grid-template-columns:1fr; } .c-hints { display:none; } }
+  ::-webkit-scrollbar { width:8px; height:8px; }
+  ::-webkit-scrollbar-thumb { background:var(--border); border-radius:99px; }
+  ::-webkit-scrollbar-thumb:hover { background:var(--border-2); }
+  ::-webkit-scrollbar-track { background:transparent; }
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="statusbar mono">
+    <span class="sb-brand">AEOX <span class="slash">// <i>CHAT</i></span></span>
+    <span class="sb-ver">v0.1-beta</span>
+    <span class="sb-sep"></span>
+    <span class="sb-item"><i class="sb-dot" style="background:var(--up)"></i>pool <b id="sbPool">4/6</b></span>
+    <span class="sb-item">routed <b id="sbRouted">1,284</b></span>
+    <span class="sb-item">failover <b>0.4%</b></span>
+    <span class="sb-item">burn <b id="sbBurn">$1.92</b></span>
+    <nav class="sb-links">
+      <a class="sb-link here" href="chat.html">chat</a>
+      <a class="sb-link" href="engine.html">engine</a>
+      <a class="sb-link" href="admin.html">admin</a>
+      <a class="sb-link" href="index.html">hub</a>
+    </nav>
+  </header>
+
+  <div class="body">
+    <aside class="rail">
+      <button class="new-chat" id="newChat">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+        new chat
+      </button>
+      <div class="rail-label mono">sessions</div>
+      <div class="conv-list" id="convList"></div>
+      <div class="rail-foot">
+        <div class="quota-row mono"><span>QUOTA</span><b id="quotaNum">28/30</b></div>
+        <div class="quota-bar"><i id="quotaBar" class="hot" style="width:93%"></i></div>
+        <div class="anon mono">anon session · no account</div>
+      </div>
+    </aside>
+
+    <main class="stream">
+      <div class="msgs" id="msgs"><div class="msg-col" id="msgCol"></div></div>
+      <div class="composer-wrap">
+        <div class="composer">
+          <textarea id="input" rows="1" placeholder="Ask anything — no account needed"></textarea>
+          <div class="c-foot">
+            <div class="modes" id="modeChips"></div>
+            <div class="c-hints mono">
+              <span>send</span><span class="kbd">↵</span>
+              <span>line</span><span class="kbd">⇧↵</span>
+            </div>
+            <button class="send" id="sendBtn" title="Send">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
+            </button>
+          </div>
+        </div>
+        <div class="composer-note mono">history stays in your browser · 30 msgs/day · routed by the aeox key engine</div>
+      </div>
+    </main>
+
+    <aside class="engine">
+      <div class="eng-head mono"><i></i>Engine</div>
+      <div class="eng-sec mono">key pool</div>
+      <div id="pool"></div>
+      <div class="eng-sec mono">ttft · last 12s</div>
+      <div class="spark" id="sparkTtft"></div>
+      <div class="spark-val mono"><span>avg</span><b id="ttftVal">0.72s</b></div>
+      <div class="eng-sec mono">tokens/s</div>
+      <div class="spark amber" id="sparkBurn"></div>
+      <div class="spark-val mono"><span>now</span><b id="burnVal">64 t/s</b></div>
+      <div class="eng-foot">
+        <a href="engine.html" class="mono">engine console →</a>
+      </div>
+    </aside>
+  </div>
+</div>
+
+<script>
+(function () {
+  'use strict';
+  var POOL = [
+    { prov:'deepseek', n:1, status:'up', req:642, quota:42 },
+    { prov:'deepseek', n:2, status:'up', req:411, quota:38 },
+    { prov:'qwen', n:3, status:'cooldown', coolUntil:Date.now() + 42000, req:118, quota:12 },
+    { prov:'qwen', n:4, status:'up', req:96, quota:9 },
+    { prov:'groq', n:5, status:'up', req:17, quota:2 },
+    { prov:'openrouter', n:6, status:'disabled', req:0, quota:0 }
+  ];
+  var routed = 1284, burnCents = 192;
+  var ttfts = [640,720,580,690,540,610,760,700,650,590,680,710];
+  var burns = [58,64,71,49,66,58,73,61,55,68,62,64];
+
+  function $(id) { return document.getElementById(id); }
+  function el(tag, cls, html) {
+    var e = document.createElement(tag);
+    if (cls) e.className = cls;
+    if (html !== undefined) e.innerHTML = html;
+    return e;
+  }
+  function rnd(n) { return Math.floor(Math.random() * n); }
+  function activeKeys() { return POOL.filter(function(k){ return k.status === 'up'; }); }
+  function keyLabel(k) { return k.prov + '#' + String(k.n).padStart(2, '0'); }
+
+  function renderPool() {
+    var box = $('pool');
+    box.innerHTML = '';
+    POOL.forEach(function(k) {
+      var off = k.status === 'disabled' ? ' off' : '';
+      var name = k.prov + ' #' + String(k.n).padStart(2, '0');
+      if (k.status === 'cooldown') {
+        var s = Math.max(0, Math.ceil((k.coolUntil - Date.now()) / 1000));
+        name += ' <em>' + s + 's</em>';
+      }
+      var dot = k.status === 'up' ? 'up' : (k.status === 'cooldown' ? 'warn' : 'down');
+      box.appendChild(el('div', 'krow mono' + off,
+        '<i class="dot ' + dot + '"></i><span class="kname">' + name + '</span><span class="kreq">' + k.req + '</span>'));
+    });
+  }
+  function renderSpark(id, arr, max) {
+    var box = $(id);
+    box.innerHTML = '';
+    arr.forEach(function(v) {
+      box.appendChild(el('i', '', ' ')).style.height = Math.max(8, v / max * 100) + '%';
+    });
+  }
+  function renderTelemetry() {
+    $('sbPool').textContent = activeKeys().length + '/' + POOL.length;
+    $('sbRouted').textContent = routed.toLocaleString();
+    $('sbBurn').textContent = '$' + (burnCents / 100).toFixed(2);
+    var avg = ttfts.reduce(function(a, b){ return a + b; }, 0) / ttfts.length;
+    $('ttftVal').textContent = (avg / 1000).toFixed(2) + 's';
+    $('burnVal').textContent = burns[burns.length - 1] + ' t/s';
+  }
+  function renderAll() {
+    renderPool();
+    renderSpark('sparkTtft', ttfts, 900);
+    renderSpark('sparkBurn', burns, 90);
+    renderTelemetry();
+  }
+
+  setInterval(function() {
+    POOL.forEach(function(k) {
+      if (k.status === 'cooldown' && Date.now() >= k.coolUntil) k.status = 'up';
+    });
+    var act = activeKeys();
+    if (act.length) {
+      act[rnd(act.length)].req++;
+      routed++;
+      ttfts.push(340 + rnd(560)); ttfts.shift();
+      burns.push(30 + rnd(55)); burns.shift();
+      burnCents += rnd(4);
+    }
+    renderAll();
+  }, 1600);
+
+  var REPLY_A = '**Good question — but this is a demo.**\n\nThis UI is a static mock: responses are simulated locally so you can evaluate the interface without a backend. In the real build this text would stream from `/api/chat` via SSE, routed by the key engine.\n\nWhat is real in this demo:\n- The streaming feel (typewriter + block cursor) and markdown rendering\n- The engine badge row — hover `key#` for quota, click `trace` for raw SSE chunks\n- The live engine panel on the right and the failover events in the stream';
+  var REPLY_B = 'Still demo mode — so here is something useful anyway.\n\n```\nconst res = await fetch("/api/chat", {\n  method: "POST",\n  body: JSON.stringify({ messages })\n});\nconst reader = res.body.getReader();\n```\n\nThat is roughly the entire client contract of the real app: **one POST, one stream, zero auth headers**. Anonymous sessions are issued as signed cookies; the server enforces IP + session quotas before a single upstream token is spent.';
+
+  var CONVS = [
+    { msgs: [
+      { role:'user', text:'Why route through multiple API keys instead of calling DeepSeek directly?' },
+      { role:'event', from:'qwen#03', code:'429', to:'deepseek#02', ok:'200' },
+      { role:'ai', text:'**Resilience and cost control.** A single key is a single point of failure — one 429 and every visitor sees an error.\n\nThe key engine gives you:\n- **Failover** — a 429/5xx automatically retries on the next key; visitors never notice\n- **Cooldown** — rate-limited keys pause for 60s, then rejoin the pool\n- **Budget guard** — each key has a monthly cap; exhausted keys are skipped\n\nYou just saw it happen: the event line above is a real routing decision. Every answer carries its badge row — hover the key badge for live quota, click trace for the raw SSE chunks. View-source and verify.',
+        meta:{ engine:'deepseek-v3', key:'deepseek#02', ttft:'812ms', tok:'512 tok', quota:42 } }
+    ]},
+    { msgs: [
+      { role:'user', text:'Show me a minimal SSE endpoint in Hono' },
+      { role:'ai', text:'Here is the whole proxy, minus auth plumbing:\n\n```\napp.post("/api/chat", (c) => {\n  return streamSSE(c, async (stream) => {\n    for await (const chunk of upstream(c)) {\n      await stream.writeSSE({ data: chunk });\n    }\n  });\n});\n```\n\n`streamSSE` keeps the connection alive; `upstream()` yields decoded deltas from whichever key the engine picked. On failure it throws, and the engine retries a different key before the client ever sees a gap.',
+        meta:{ engine:'llama-3.3-70b', key:'groq#05', ttft:'210ms', tok:'298 tok', quota:17 } }
+    ]},
+    { msgs: [] }, { msgs: [] }, { msgs: [] }
+  ];
+  var active = 0;
+
+  var MODES = [
+    { id:'fast', label:'fast', engine:'llama-3.3-70b' },
+    { id:'balanced', label:'balanced', engine:'deepseek-v3' },
+    { id:'deep', label:'deep', engine:'deepseek-r1' }
+  ];
+  var mode = 'balanced';
+  var QUOTA_MAX = 30, quota = 28, sending = false;
+
+  function esc(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  function md(src) {
+    var blocks = [];
+    src = src.replace(/```(\w*)\n([\s\S]*?)```/g, function(m, l, code) {
+      blocks.push('<pre class="code"><code>' + esc(code.replace(/\n$/,'')) + '</code></pre>');
+      return '\u0000B' + (blocks.length - 1) + '\u0000';
+    });
+    src = esc(src);
+    src = src.replace(/`([^`]+)`/g, '<code class="ic">$1</code>');
+    src = src.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+    var out = '';
+    src.split(/\n{2,}/).forEach(function(par) {
+      var s = par.trim();
+      if (!s) return;
+      if (/^[-*] /m.test(s)) {
+        out += '<ul>' + s.split('\n').map(function(l){ return l.replace(/^[-*] /, '<li>') + '</li>'; }).join('') + '</ul>';
+      } else if (/^\u0000B\d+\u0000$/.test(s)) {
+        out += s;
+      } else {
+        out += '<p>' + s.replace(/\n/g, '<br>') + '</p>';
+      }
+    });
+    return out.replace(/\u0000B(\d+)\u0000/g, function(m, i){ return blocks[+i]; });
+  }
+
+  var msgsEl = $('msgs'), colEl = $('msgCol');
+  function scrollBottom() { msgsEl.scrollTop = msgsEl.scrollHeight; }
+
+  var CONV_TITLES = ['why multiple keys?', 'hono sse endpoint', 'sqlite rate limiting', 'markdown streaming', 'sse vs websocket'];
+  function renderConvs() {
+    var list = $('convList');
+    list.innerHTML = '';
+    CONVS.forEach(function(c, i) {
+      var d = el('div', 'conv' + (i === active ? ' active' : ''), esc(CONV_TITLES[i]));
+      d.addEventListener('click', function(){ active = i; renderConvs(); renderMsgs(); });
+      list.appendChild(d);
+    });
+  }
+
+  function renderWelcome() {
+    colEl.innerHTML = '';
+    var w = el('div', 'welcome');
+    w.appendChild(el('div', 'ai-mark', 'A'));
+    w.appendChild(el('h2', '', 'How can I help?'));
+    w.appendChild(el('div', 'wline mono', 'no account · local history · multi-engine routing'));
+    var SUGG = [
+      ['what is the key engine?', 'routing, failover, cooldown'],
+      ['write a hono sse endpoint', 'streaming proxy in a few lines'],
+      ['deepseek vs qwen pricing', 'rough cost per 1M tokens'],
+      ['draft the chat.aeox.uk footer', 'one-liner, industrial style']
+    ];
+    var g = el('div', 'sugg');
+    SUGG.forEach(function(s) {
+      var b = el('button', '', esc(s[0]) + '<small>' + esc(s[1]) + '</small>');
+      b.addEventListener('click', function(){ send(s[0]); });
+      g.appendChild(b);
+    });
+    w.appendChild(g);
+    colEl.appendChild(w);
+  }
+
+  function eventLine(ev) {
+    return el('div', 'fev mono', '⟲ failover: ' + esc(ev.from) + ' ' + esc(ev.code) +
+      ' → <b>' + esc(ev.to) + '</b> · ' + esc(ev.ok));
+  }
+
+  function traceBox(meta, reply) {
+    var words = reply.split(' ');
+    var lines = [];
+    for (var i = 0; i < 6; i++) {
+      var seg = words.slice(i * 3, i * 3 + 3).join(' ');
+      if (!seg) break;
+      lines.push('data: {"id":"cmpl-' + meta.key.replace('#','') + '","model":"' + meta.engine +
+        '","choices":[{"delta":{"content":"' + esc(seg) + ' "}}]}');
+    }
+    lines.push('data: <span class="tok">[DONE]</span>');
+    var pre = el('pre', 'trace-box mono', lines.join('\n'));
+    return pre;
+  }
+
+  function badgeRow(m, convMsg) {
+    var row = el('div', 'erow');
+    row.appendChild(el('span', 'eb', esc(m.engine)));
+    row.appendChild(el('span', 'eb key', esc(m.key) +
+      '<i class="tip mono">quota: <b>' + m.quota + '%</b> · cooldown: <b>0s</b> · budget guard: <b>on</b></i>'));
+    row.appendChild(el('span', 'eb', 'ttft ' + esc(m.ttft)));
+    row.appendChild(el('span', 'eb', esc(m.tok)));
+    row.appendChild(el('span', 'eb ok', '200 OK'));
+    return row;
+  }
+
+  function renderMsgs() {
+    var conv = CONVS[active];
+    colEl.innerHTML = '';
+    if (!conv.msgs.length) { renderWelcome(); return; }
+    conv.msgs.forEach(function(m) { appendMsg(m, false); });
+    scrollBottom();
+  }
+
+  function appendMsg(m, scroll) {
+    if (m.role === 'user') {
+      colEl.appendChild(el('div', 'm-user', '<span class="pfx mono">&gt;</span><span class="u-txt">' + esc(m.text) + '</span>'));
+      if (scroll) scrollBottom();
+      return null;
+    }
+    if (m.role === 'event') {
+      colEl.appendChild(eventLine(m));
+      if (scroll) scrollBottom();
+      return null;
+    }
+    var wrap = el('div', 'm-ai');
+    var head = el('div', 'ai-head');
+    head.appendChild(el('div', 'ai-mark', 'A'));
+    head.appendChild(el('span', 'ai-name mono', 'aeox // ai'));
+    wrap.appendChild(head);
+    var body = el('div', 'msg-text', m.text ? md(m.text) : '');
+    wrap.appendChild(body);
+    if (m.meta) {
+      wrap.appendChild(badgeRow(m.meta));
+      wrap.appendChild(traceBox(m.meta, m.text));
+      attachTrace(wrap);
+    }
+    wrap._body = body;
+    colEl.appendChild(wrap);
+    if (scroll) scrollBottom();
+    return wrap;
+  }
+
+  function attachTrace(wrap) {
+    var row = wrap.querySelector('.erow');
+    var chip = el('span', 'eb trace', 'trace');
+    row.appendChild(chip);
+    var box = wrap.querySelector('.trace-box');
+    chip.addEventListener('click', function() { box.classList.toggle('open'); });
+  }
+
+  function updateQuota() {
+    $('quotaNum').textContent = quota + '/' + QUOTA_MAX;
+    var bar = $('quotaBar');
+    bar.style.width = (quota / QUOTA_MAX * 100) + '%';
+    bar.className = quota >= QUOTA_MAX ? 'full' : (quota >= QUOTA_MAX - 2 ? 'hot' : '');
+  }
+
+  var replyIdx = 0;
+  function send(text) {
+    text = (text || $('input').value).trim();
+    if (!text || sending) return;
+    if (quota >= QUOTA_MAX) {
+      colEl.appendChild(el('div', 'notice mono', 'daily limit reached (30/30) — resets tomorrow'));
+      scrollBottom();
+      return;
+    }
+    var conv = CONVS[active];
+    if (!conv.msgs.length) colEl.innerHTML = '';
+    conv.msgs.push({ role:'user', text:text });
+    appendMsg({ role:'user', text:text }, true);
+    $('input').value = '';
+    autoGrow();
+    quota++; updateQuota();
+    sending = true;
+
+    var typing = el('div', 'm-ai');
+    typing.appendChild(el('div', 'typing', '<i></i><i></i><i></i>'));
+    colEl.appendChild(typing);
+    scrollBottom();
+
+    setTimeout(function() {
+      typing.remove();
+      var reply = (replyIdx++ % 2 === 0) ? REPLY_A : REPLY_B;
+      var act = activeKeys().slice().sort(function(a, b){ return a.n - b.n; });
+      if (!act.length) act = [{ prov:'deepseek', n:9, quota:0 }];
+      var fail = act.length > 1 && Math.random() < 0.45;
+      var primary = act[0], secondary = act[1] || act[0];
+      var failAt = fail ? 0.25 + Math.random() * 0.35 : 2;
+      var ev = { role:'event', from:keyLabel(primary), code:'429', to:keyLabel(secondary), ok:'200' };
+      var finalKey = fail ? secondary : primary;
+      var meta = {
+        engine: MODES.filter(function(m){ return m.id === mode; })[0].engine,
+        key: keyLabel(finalKey),
+        ttft: (fail ? 600 + rnd(700) : 180 + rnd(500)) + 'ms',
+        tok: (180 + rnd(620)) + ' tok',
+        quota: finalKey.quota
+      };
+
+      var holder = appendMsg({ role:'ai', text:'' }, true);
+      var body = holder._body;
+      var cur = el('span', 'cur');
+      body.appendChild(cur);
+      var node = document.createTextNode('');
+      body.insertBefore(node, cur);
+      var inserted = false, i = 0;
+      var timer = setInterval(function() {
+        i += 2 + rnd(4);
+        node.data = reply.slice(0, i);
+        scrollBottom();
+        if (!inserted && i / reply.length >= failAt) {
+          inserted = true;
+          holder.insertBefore(eventLine(ev), body.nextSibling);
+          scrollBottom();
+        }
+        if (i >= reply.length) {
+          clearInterval(timer);
+          body.innerHTML = md(reply);
+          holder.appendChild(badgeRow(meta));
+          holder.appendChild(traceBox(meta, reply));
+          attachTrace(holder);
+          conv.msgs.push(ev);
+          conv.msgs.push({ role:'ai', text:reply, meta:meta });
+          finalKey.req++;
+          sending = false;
+          scrollBottom();
+        }
+      }, 22);
+    }, 650);
+  }
+
+  var input = $('input');
+  function autoGrow() {
+    input.style.height = '22px';
+    input.style.height = Math.min(input.scrollHeight, 150) + 'px';
+  }
+  input.addEventListener('input', autoGrow);
+  input.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); }
+  });
+  $('sendBtn').addEventListener('click', function(){ send(); });
+  $('newChat').addEventListener('click', function() {
+    CONVS[active].msgs = [];
+    renderMsgs();
+  });
+
+  var modesEl = $('modeChips');
+  MODES.forEach(function(m) {
+    var b = el('button', 'mode mono' + (m.id === mode ? ' active' : ''), m.label);
+    b.addEventListener('click', function() {
+      mode = m.id;
+      var all = modesEl.querySelectorAll('.mode');
+      for (var i = 0; i < all.length; i++) all[i].classList.remove('active');
+      b.classList.add('active');
+    });
+    modesEl.appendChild(b);
+  });
+
+  updateQuota();
+  renderConvs();
+  renderMsgs();
+  renderAll();
+})();
+</script>
+</body>
+</html>

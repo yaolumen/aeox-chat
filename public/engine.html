@@ -1,0 +1,234 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>aeox chat — key engine</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>A</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Geist+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:#09090b; --bg-2:#0c0c0f; --panel:#0f0f13; --panel-2:#15151b;
+    --border:rgba(255,255,255,.07); --border-2:rgba(255,255,255,.14);
+    --text:#e4e4e7; --text-2:#a1a1aa; --muted:#5f5f68;
+    --accent:#3b82f6; --up:#22c55e; --warn:#f59e0b; --down:#ef4444;
+    --code-bg:#101015; --hover:rgba(255,255,255,.04);
+    --shadow:0 8px 32px rgba(0,0,0,.55);
+  }
+  * { box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent; }
+  body {
+    background:var(--bg); color:var(--text); line-height:1.65; font-size:14px;
+    font-family:"Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Microsoft YaHei", sans-serif;
+  }
+  .mono { font-family:"Geist Mono", "JetBrains Mono", ui-monospace, Consolas, monospace; }
+  a { color:inherit; text-decoration:none; }
+  button { font-family:inherit; }
+
+  .statusbar {
+    position:sticky; top:0; z-index:10; height:38px; border-bottom:1px solid var(--border);
+    display:flex; align-items:center; gap:18px; padding:0 16px;
+    background:var(--bg); font-size:11px;
+  }
+  .sb-brand { font-weight:700; font-size:12px; letter-spacing:.4px; white-space:nowrap; }
+  .sb-brand .slash { color:var(--muted); }
+  .sb-brand .slash i { font-style:normal; color:var(--accent); }
+  .sb-ver { color:var(--muted); border:1px solid var(--border); border-radius:4px; padding:0 5px; font-size:9.5px; }
+  .sb-sep { width:1px; height:14px; background:var(--border); }
+  .sb-item { color:var(--muted); display:flex; align-items:center; gap:6px; white-space:nowrap; }
+  .sb-item b { color:var(--text-2); font-weight:600; }
+  .sb-dot { width:6px; height:6px; border-radius:50%; display:inline-block; }
+  .sb-links { margin-left:auto; display:flex; gap:4px; }
+  .sb-link { color:var(--muted); padding:3px 10px; border:1px solid transparent; border-radius:6px; font-size:11px;
+    background:transparent; cursor:pointer; }
+  .sb-link:hover { color:var(--text); border-color:var(--border-2); }
+  .sb-link.here { color:var(--accent); border-color:var(--accent); }
+
+  .wrap { max-width:1180px; margin:0 auto; padding:26px 20px 50px; }
+
+  .page-head { display:flex; align-items:center; gap:14px; flex-wrap:wrap; margin-bottom:18px; }
+  .page-head h1 { font-size:20px; font-weight:600; letter-spacing:-.3px; }
+  .live { display:flex; align-items:center; gap:7px; font-size:10px; font-weight:600;
+    color:var(--up); border:1px solid var(--up); border-radius:999px; padding:3px 11px; letter-spacing:1.5px; }
+  .live i { width:7px; height:7px; border-radius:50%; background:var(--up); animation:pulse 1.6s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.3} }
+
+  .controls { display:flex; align-items:center; gap:14px; flex-wrap:wrap; margin-bottom:8px; }
+  .strat-chip { border:1px solid var(--border-2); border-radius:8px; padding:5px 15px; font-size:11.5px;
+    color:var(--accent); background:var(--hover); font-family:"Geist Mono", Consolas, monospace; }
+  .seg-desc { font-size:11.5px; color:var(--muted); }
+
+  .stats { display:grid; grid-template-columns:repeat(5, 1fr); gap:10px; margin:16px 0; }
+  .stat { border:1px solid var(--border); border-radius:9px; padding:10px 13px; background:var(--bg-2); }
+  .stat .k { font-size:9.5px; color:var(--muted); text-transform:uppercase; letter-spacing:1.8px; }
+  .stat .v { font-size:18px; font-weight:600; letter-spacing:-.4px; margin-top:1px; }
+  .stat .v small { font-size:11px; color:var(--muted); font-weight:400; }
+
+  .grid { display:grid; grid-template-columns:1.5fr 1fr; gap:12px; align-items:stretch; }
+  .panel { background:var(--panel); border:1px solid var(--border); border-radius:11px; overflow:hidden; }
+  .panel-head { padding:11px 15px; border-bottom:1px solid var(--border); display:flex; align-items:center; gap:10px; }
+  .panel-head h2 { font-size:11px; letter-spacing:2px; text-transform:uppercase; color:var(--text-2); font-weight:600; }
+  .panel-head small { color:var(--muted); font-size:10px; }
+
+  .feed { font-family:"Geist Mono", Consolas, monospace; font-size:11.5px; padding:10px 13px;
+    height:398px; overflow-y:auto; }
+  .frow { display:flex; gap:10px; padding:4px 2px; border-bottom:1px dashed var(--border); align-items:baseline; }
+  .frow:last-child { border-bottom:none; }
+  .ft { color:var(--muted); flex-shrink:0; }
+  .fk { flex-shrink:0; width:82px; font-weight:600; font-size:10px; letter-spacing:.8px; }
+  .fk.route { color:var(--muted); } .fk.failover, .fk.cooldown { color:var(--warn); }
+  .fk.recovered { color:var(--up); } .fk.budget, .fk.disabled { color:var(--accent); }
+  .fm { color:var(--text-2); }
+  .fm b { color:var(--text); font-weight:600; }
+
+  .rack { padding:12px; display:grid; grid-template-columns:1fr 1fr; gap:9px; align-content:start; }
+  .kcard { border:1px solid var(--border); border-radius:9px; padding:11px 12px; background:var(--bg-2);
+    position:relative; transition:border-color .25s; }
+  .kcard.next { border-color:var(--accent); box-shadow:0 0 0 1px var(--accent); }
+  .kcard.off { opacity:.5; }
+  .kcard .prov { font-size:12px; font-weight:600; display:flex; align-items:center; gap:7px; }
+  .kdot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+  .kdot.up { background:var(--up); } .kdot.warn { background:var(--warn); animation:pulse 1.6s infinite; }
+  .kdot.down { background:var(--down); }
+  .kcard .kk { font-family:"Geist Mono", Consolas, monospace; font-size:10.5px; color:var(--muted); margin:3px 0 7px; }
+  .kcard .meta { display:flex; justify-content:space-between; font-size:10.5px; color:var(--muted); }
+  .kcard .meta b { color:var(--text-2); font-weight:600; }
+  .kcard .meta .cd { color:var(--warn); }
+  .next-tag { position:absolute; top:-8px; right:9px; font-size:8.5px; font-weight:700; letter-spacing:1.5px;
+    background:var(--accent); color:#fff; border-radius:4px; padding:1px 7px; }
+
+  .steps { display:grid; grid-template-columns:repeat(3, 1fr); gap:10px; margin-top:12px; }
+  .step { border:1px solid var(--border); border-radius:10px; padding:13px 15px; background:var(--bg-2); }
+  .step .n { font-size:9.5px; font-weight:700; letter-spacing:2px; color:var(--accent); }
+  .step h3 { font-size:13px; margin:3px 0 4px; }
+  .step p { font-size:11.5px; color:var(--muted); }
+  .step code { background:var(--code-bg); border:1px solid var(--border); border-radius:4px; padding:0 5px;
+    font-family:"Geist Mono", Consolas, monospace; font-size:10.5px; color:var(--text-2); }
+
+  .family-foot { border-top:1px solid var(--border); margin-top:44px; }
+  .ff-grid { max-width:1180px; margin:0 auto; padding:36px 20px 28px; display:grid; grid-template-columns:1.4fr 1fr 1.5fr 1fr; gap:30px; }
+  .ff-logo { font-weight:700; font-size:15px; letter-spacing:.4px; }
+  .ff-logo span { color:var(--accent); }
+  .ff-mission { font-size:11.5px; color:var(--muted); margin-top:10px; line-height:1.7; max-width:260px; }
+  .ff-h { font-size:10px; letter-spacing:2px; text-transform:uppercase; color:var(--text-2); font-weight:600; margin-bottom:10px; }
+  .ff-col a { display:block; font-size:12px; color:var(--muted); padding:3px 0; transition:color .15s; }
+  .ff-col a:hover { color:var(--accent); }
+  .ff-soon { display:block; font-size:12px; color:var(--muted); opacity:.55; padding:3px 0; }
+  .ff-bar { border-top:1px solid var(--border); }
+  .ff-bar p { max-width:1180px; margin:0 auto; padding:14px 20px 26px; font-size:10.5px; color:var(--muted); line-height:1.8; }
+  .ff-bar a { color:var(--text-2); }
+  .ff-bar a:hover { color:var(--accent); }
+  .masked-note { max-width:1180px; margin:26px auto 0; padding:0 20px; font-size:10.5px; color:var(--muted); }
+
+  @media (max-width: 940px) {
+    .grid { grid-template-columns:1fr; }
+    .stats { grid-template-columns:repeat(2, 1fr); }
+    .steps { grid-template-columns:1fr; }
+    .feed { height:300px; }
+    .ff-grid { grid-template-columns:1fr 1fr; gap:22px; }
+  }
+  @media (max-width: 620px) {
+    .ff-grid { grid-template-columns:1fr; }
+  }
+  ::-webkit-scrollbar { width:8px; height:8px; }
+  ::-webkit-scrollbar-thumb { background:var(--border); border-radius:99px; }
+  ::-webkit-scrollbar-thumb:hover { background:var(--border-2); }
+  ::-webkit-scrollbar-track { background:transparent; }
+</style>
+</head>
+<body>
+<header class="statusbar mono">
+  <span class="sb-brand">AEOX <span class="slash">// <i>CHAT</i></span></span>
+  <span class="sb-ver">v0.1-beta</span>
+  <span class="sb-sep"></span>
+  <span class="sb-item"><i class="sb-dot" style="background:var(--up)"></i><span data-i18n="sb.pool"></span> <b id="sbPool">—</b></span>
+  <span class="sb-item"><span data-i18n="sb.routed"></span> <b id="sbRouted">—</b></span>
+  <span class="sb-item"><span data-i18n="sb.events"></span> <b id="sbEvents">—</b></span>
+    <nav class="sb-links">
+      <a class="sb-link" href="/">hub</a>
+      <a class="sb-link" href="/chat">chat</a>
+      <a class="sb-link here" href="/engine">engine</a>
+      <button class="sb-link" id="langBtn" type="button">EN</button>
+    </nav>
+</header>
+
+<div class="wrap">
+  <div class="page-head">
+    <h1 data-i18n="eng.title"></h1>
+    <span class="live mono"><i></i><span data-i18n="eng.live"></span></span>
+  </div>
+
+  <div class="controls">
+    <span class="strat-chip" data-i18n="eng.strategy"></span>
+    <span class="seg-desc mono" data-i18n="eng.stratDesc"></span>
+  </div>
+
+  <div class="stats mono">
+    <div class="stat"><div class="k" data-i18n="eng.routed"></div><div class="v" id="stRouted">—</div></div>
+    <div class="stat"><div class="k" data-i18n="eng.events"></div><div class="v" id="stEvents">—</div></div>
+    <div class="stat"><div class="k" data-i18n="eng.health"></div><div class="v" id="stPool">—</div></div>
+    <div class="stat"><div class="k" data-i18n="eng.cooldown"></div><div class="v" id="stCool">—</div></div>
+    <div class="stat"><div class="k" data-i18n="eng.standby"></div><div class="v" id="stStandby">—</div></div>
+  </div>
+
+  <div class="grid">
+    <div class="panel">
+      <div class="panel-head"><h2 data-i18n="eng.feed"></h2><small data-i18n="eng.autoscroll"></small></div>
+      <div class="feed" id="feed"></div>
+    </div>
+    <div class="panel">
+      <div class="panel-head"><h2 data-i18n="eng.rack"></h2><small data-i18n="eng.next"></small></div>
+      <div class="rack" id="rack"></div>
+    </div>
+  </div>
+
+  <div class="steps">
+    <div class="step"><div class="n mono" data-i18n="eng.step1n"></div><h3 data-i18n="eng.step1h"></h3>
+      <p data-i18n="eng.step1p"></p></div>
+    <div class="step"><div class="n mono" data-i18n="eng.step2n"></div><h3 data-i18n="eng.step2h"></h3>
+      <p data-i18n="eng.step2p"></p></div>
+    <div class="step"><div class="n mono" data-i18n="eng.step3n"></div><h3 data-i18n="eng.step3h"></h3>
+      <p data-i18n="eng.step3p"></p></div>
+  </div>
+</div>
+
+<p class="masked-note mono" data-i18n="eng.cleanup"></p>
+<p class="masked-note mono">© 2026 AEOX — aeox.uk · <span data-i18n="eng.foot"></span></p>
+
+<footer class="family-foot">
+  <div class="ff-grid">
+    <div class="ff-col">
+      <div class="ff-logo">AEOX <span>Lab</span></div>
+      <p class="ff-mission" data-i18n="foot.mission"></p>
+    </div>
+    <div class="ff-col">
+      <div class="ff-h" data-i18n="foot.thisSite"></div>
+      <a href="/" data-i18n="foot.siteHub"></a>
+      <a href="/chat" data-i18n="foot.siteChat"></a>
+      <a href="/engine" data-i18n="foot.siteEngine"></a>
+      <a href="/demo/index.html" data-i18n="foot.siteDemo"></a>
+    </div>
+    <div class="ff-col">
+      <div class="ff-h">AEOX Network</div>
+      <a href="https://aeox.uk/" target="_blank" rel="noopener" data-i18n="foot.netAeox"></a>
+      <a href="https://anchor.aeox.uk/" target="_blank" rel="noopener" data-i18n="foot.netAnchor"></a>
+      <a href="https://cli.aeox.uk/" target="_blank" rel="noopener" data-i18n="foot.netCli"></a>
+      <a href="https://chat.aeox.uk/" target="_blank" rel="noopener" data-i18n="foot.netChat"></a>
+      <a href="https://shui.aeox.uk/" target="_blank" rel="noopener" data-i18n="foot.netShui"></a>
+    </div>
+    <div class="ff-col">
+      <div class="ff-h" data-i18n="foot.resources"></div>
+      <a href="https://go.aeox.uk/" target="_blank" rel="noopener" data-i18n="foot.hubGo"></a>
+      <span class="ff-soon" data-i18n="foot.premium"></span>
+      <a href="https://chat.aeox.uk/" target="_blank" rel="noopener">chat.aeox.uk</a>
+    </div>
+  </div>
+  <div class="ff-bar">
+    <p class="mono" data-i18n-html="foot.bar"></p>
+  </div>
+</footer>
+
+<script type="module" src="/assets/engine.js"></script>
+</body>
+</html>

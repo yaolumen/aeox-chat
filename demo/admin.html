@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AEOX Chat — Demo · Admin</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>A</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Geist+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:#09090b; --bg-2:#0c0c0f; --panel:#0f0f13; --panel-2:#15151b;
+    --border:rgba(255,255,255,.07); --border-2:rgba(255,255,255,.14);
+    --text:#e4e4e7; --text-2:#a1a1aa; --muted:#5f5f68;
+    --accent:#3b82f6; --up:#22c55e; --warn:#f59e0b; --down:#ef4444;
+    --code-bg:#101015; --hover:rgba(255,255,255,.04);
+    --shadow:0 8px 32px rgba(0,0,0,.55);
+  }
+  * { box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent; }
+  body {
+    background:var(--bg); color:var(--text); line-height:1.65; font-size:14px;
+    font-family:"Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  }
+  .mono { font-family:"Geist Mono", "JetBrains Mono", ui-monospace, Consolas, monospace; }
+  a { color:inherit; text-decoration:none; }
+
+  .statusbar {
+    position:sticky; top:0; z-index:10; height:38px; border-bottom:1px solid var(--border);
+    display:flex; align-items:center; gap:18px; padding:0 16px;
+    background:var(--bg); font-size:11px;
+  }
+  .sb-brand { font-weight:700; font-size:12px; letter-spacing:.4px; white-space:nowrap; }
+  .sb-brand .slash { color:var(--muted); }
+  .sb-brand .slash i { font-style:normal; color:var(--accent); }
+  .sb-ver { color:var(--muted); border:1px solid var(--border); border-radius:4px; padding:0 5px; font-size:9.5px; }
+  .sb-sep { width:1px; height:14px; background:var(--border); }
+  .sb-item { color:var(--muted); display:flex; align-items:center; gap:6px; white-space:nowrap; }
+  .sb-item b { color:var(--text-2); font-weight:600; }
+  .sb-dot { width:6px; height:6px; border-radius:50%; display:inline-block; }
+  .sb-links { margin-left:auto; display:flex; gap:4px; }
+  .sb-link { color:var(--muted); padding:3px 10px; border:1px solid transparent; border-radius:6px; font-size:11px; }
+  .sb-link:hover { color:var(--text); border-color:var(--border-2); }
+  .sb-link.here { color:var(--accent); border-color:var(--accent); }
+
+  .wrap { max-width:1100px; margin:0 auto; padding:26px 20px 50px; }
+  .page-head { margin-bottom:20px; }
+  .page-head h1 { font-size:20px; font-weight:600; letter-spacing:-.3px; }
+  .page-head p { color:var(--muted); font-size:12.5px; max-width:640px; margin-top:3px; }
+
+  .stats { display:grid; grid-template-columns:repeat(4, 1fr); gap:10px; margin-bottom:22px; }
+  .stat { border:1px solid var(--border); border-radius:9px; padding:11px 14px; background:var(--bg-2); }
+  .stat .k { font-size:9.5px; color:var(--muted); text-transform:uppercase; letter-spacing:1.8px; }
+  .stat .v { font-size:19px; font-weight:600; letter-spacing:-.4px; margin-top:1px; }
+  .stat .v small { font-size:11px; color:var(--muted); font-weight:400; }
+  .stat .s { font-size:10.5px; margin-top:1px; }
+  .stat .s b { color:var(--up); font-weight:600; }
+  .stat .s { color:var(--muted); }
+
+  .panel { background:var(--panel); border:1px solid var(--border); border-radius:11px; overflow:hidden; }
+  .panel-head { padding:11px 15px; border-bottom:1px solid var(--border); display:flex; align-items:center; gap:10px; }
+  .panel-head h2 { font-size:11px; letter-spacing:2px; text-transform:uppercase; color:var(--text-2); font-weight:600; }
+  .panel-head small { color:var(--muted); font-size:10px; }
+
+  table { width:100%; border-collapse:collapse; font-size:12.5px; }
+  th { text-align:left; font-size:9.5px; text-transform:uppercase; letter-spacing:1.6px; color:var(--muted);
+    font-weight:600; padding:10px 14px; border-bottom:1px solid var(--border); white-space:nowrap; }
+  td { padding:11px 14px; border-bottom:1px solid var(--border); vertical-align:middle; white-space:nowrap; }
+  tr:last-child td { border-bottom:none; }
+  tr:hover td { background:var(--hover); }
+  .kkey { font-family:"Geist Mono", Consolas, monospace; font-size:11px; color:var(--muted); }
+  .st { display:inline-flex; align-items:center; gap:6px; font-size:11px; font-weight:600;
+    font-family:"Geist Mono", Consolas, monospace; }
+  .st i { width:6px; height:6px; border-radius:50%; background:currentColor; }
+  .st.active { color:var(--up); }
+  .st.cooldown { color:var(--warn); }
+  .st.disabled { color:var(--down); }
+  .st small { font-weight:400; opacity:.85; }
+  .bar { width:80px; height:4px; border-radius:99px; background:var(--panel-2); overflow:hidden; display:inline-block;
+    vertical-align:middle; margin-right:8px; }
+  .bar i { display:block; height:100%; background:var(--accent); border-radius:99px; }
+  .bar i.hot { background:var(--warn); }
+  .budg { font-size:10.5px; color:var(--muted); font-family:"Geist Mono", Consolas, monospace; }
+  .abtn { border:1px solid var(--border); background:transparent; color:var(--muted); border-radius:6px;
+    padding:3px 9px; font-size:11px; cursor:pointer; font-family:inherit; margin-right:5px;
+    transition:color .15s, border-color .15s; }
+  .abtn:hover { color:var(--text); border-color:var(--border-2); }
+  .abtn.danger:hover { color:var(--down); border-color:var(--down); }
+  .err-ok { color:var(--up); } .err-bad { color:var(--warn); } .err-dead { color:var(--down); }
+
+  .grid2 { display:grid; grid-template-columns:1fr 1.25fr; gap:11px; margin-top:11px; align-items:start; }
+  .form-body { padding:14px 15px; display:grid; gap:11px; }
+  .frow { display:grid; grid-template-columns:1fr 1fr; gap:11px; }
+  .field label { display:block; font-size:10px; color:var(--muted); margin-bottom:4px;
+    text-transform:uppercase; letter-spacing:1.5px; }
+  .field input, .field select {
+    width:100%; background:var(--bg-2); border:1px solid var(--border); border-radius:7px;
+    color:var(--text); padding:7px 10px; font-size:12.5px; font-family:inherit; outline:none;
+    transition:border-color .15s;
+  }
+  .field input:focus, .field select:focus { border-color:var(--accent); }
+  .btn {
+    border:1px solid var(--accent); border-radius:7px; background:var(--accent); color:#fff;
+    padding:7px 16px; font-size:12.5px; font-weight:600; cursor:pointer; font-family:inherit; justify-self:start;
+    transition:filter .15s;
+  }
+  .btn:hover { filter:brightness(1.12); }
+  .hint { font-size:10.5px; color:var(--muted); }
+
+  .log { padding:9px 13px; max-height:320px; overflow-y:auto; font-family:"Geist Mono", Consolas, monospace; font-size:11px; }
+  .log-row { display:flex; gap:10px; padding:4.5px 2px; border-bottom:1px dashed var(--border); align-items:baseline; }
+  .log-row:last-child { border-bottom:none; }
+  .log-t { color:var(--muted); flex-shrink:0; }
+  .log-k { flex-shrink:0; width:80px; font-weight:600; font-size:10px; letter-spacing:.8px; }
+  .log-k.route { color:var(--muted); } .log-k.failover, .log-k.cooldown { color:var(--warn); }
+  .log-k.recovered { color:var(--up); } .log-k.budget { color:var(--accent); }
+  .log-m { color:var(--text-2); }
+
+  .foot-line { max-width:1100px; margin:26px auto 0; padding:16px 20px 30px; font-size:10.5px; color:var(--muted);
+    border-top:1px solid var(--border); }
+
+  @media (max-width: 900px) {
+    .stats { grid-template-columns:1fr 1fr; }
+    .grid2 { grid-template-columns:1fr; }
+    .hide-sm { display:none; }
+  }
+  ::-webkit-scrollbar { width:8px; height:8px; }
+  ::-webkit-scrollbar-thumb { background:var(--border); border-radius:99px; }
+  ::-webkit-scrollbar-thumb:hover { background:var(--border-2); }
+  ::-webkit-scrollbar-track { background:transparent; }
+</style>
+</head>
+<body>
+<header class="statusbar mono">
+  <span class="sb-brand">AEOX <span class="slash">// <i>CHAT</i></span></span>
+  <span class="sb-ver">v0.1-beta</span>
+  <span class="sb-sep"></span>
+  <span class="sb-item"><i class="sb-dot" style="background:var(--up)"></i>pool <b>4/6</b></span>
+  <span class="sb-item">admin</span>
+  <nav class="sb-links">
+    <a class="sb-link" href="chat.html">chat</a>
+    <a class="sb-link" href="engine.html">engine</a>
+    <a class="sb-link here" href="admin.html">admin</a>
+    <a class="sb-link" href="index.html">hub</a>
+  </nav>
+</header>
+
+<div class="wrap">
+  <div class="page-head">
+    <h1>Key management</h1>
+    <p>Bind multiple provider keys — the engine routes, fails over and cools down automatically. Keys are encrypted at rest (AES-256-GCM) and never leave the server.</p>
+  </div>
+
+  <div class="stats mono">
+    <div class="stat"><div class="k">requests today</div><div class="v">1,284</div><div class="s"><b>+12%</b> vs yesterday</div></div>
+    <div class="stat"><div class="k">tokens today</div><div class="v">2.14M</div><div class="s">≈ <b>$1.92</b> blended cost</div></div>
+    <div class="stat"><div class="k">active keys</div><div class="v">4<small>/6</small></div><div class="s">pool health 67%</div></div>
+    <div class="stat"><div class="k">failovers 24h</div><div class="v">3</div><div class="s"><b>0.4%</b> of requests</div></div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head"><h2>API keys</h2><small>priority 1 = first choice · budgets are monthly</small></div>
+    <div style="overflow-x:auto">
+      <table>
+        <thead><tr>
+          <th>Provider</th><th>Key</th><th>Prio</th><th>Status</th><th>24h req</th>
+          <th class="hide-sm">24h tokens</th><th class="hide-sm">error rate</th><th>Budget</th><th></th>
+        </tr></thead>
+        <tbody id="keyRows"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="grid2">
+    <div class="panel">
+      <div class="panel-head"><h2>Add key</h2></div>
+      <div class="form-body">
+        <div class="frow">
+          <div class="field"><label>Provider</label>
+            <select id="fProvider"><option>DeepSeek</option><option>Qwen</option><option>Groq</option><option>OpenRouter</option><option>OpenAI</option></select>
+          </div>
+          <div class="field"><label>Priority</label>
+            <input id="fPrio" type="number" min="1" max="9" value="3">
+          </div>
+        </div>
+        <div class="field"><label>API key</label>
+          <input id="fKey" type="password" placeholder="sk-...">
+        </div>
+        <div class="field"><label>Monthly budget · USD</label>
+          <input id="fBudget" type="number" min="1" value="20">
+        </div>
+        <button class="btn" id="addBtn">Add key</button>
+        <div class="hint">Encrypted with AES-256-GCM before it touches the disk. Only a masked preview is ever displayed.</div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head"><h2>Engine log</h2><small>live simulation</small></div>
+      <div class="log" id="log"></div>
+    </div>
+  </div>
+</div>
+
+<div class="foot-line mono">© 2026 AEOX — aeox.uk · admin is a local simulation, no real keys are stored</div>
+
+<script>
+(function () {
+  'use strict';
+  function $(id) { return document.getElementById(id); }
+  var KEYS = [
+    { id:1, provider:'DeepSeek', key:'sk-ds-***…9f3a', prio:1, status:'active', req:642, tok:'1.18M', err:0.3, used:64, cap:100 },
+    { id:2, provider:'DeepSeek', key:'sk-ds-***…c21b', prio:2, status:'active', req:411, tok:'720K', err:0.5, used:38, cap:100 },
+    { id:3, provider:'Qwen', key:'sk-qw-***…77e0', prio:1, status:'cooldown', coolUntil:Date.now() + 42000, req:118, tok:'190K', err:2.1, used:12, cap:50 },
+    { id:4, provider:'Qwen', key:'sk-qw-***…b4d2', prio:2, status:'active', req:96, tok:'141K', err:0.8, used:9, cap:50 },
+    { id:5, provider:'Groq', key:'gsk_***…8ac1', prio:3, status:'active', req:17, tok:'9K', err:0, used:2, cap:20 },
+    { id:6, provider:'OpenRouter', key:'sk-or-***…d5f9', prio:4, status:'disabled', req:0, tok:'0', err:100, used:0, cap:20 }
+  ];
+  var nextId = 7;
+
+  function statusCell(k) {
+    if (k.status === 'active') return '<span class="st active"><i></i>active</span>';
+    if (k.status === 'cooldown') {
+      var s = Math.max(0, Math.ceil((k.coolUntil - Date.now()) / 1000));
+      return '<span class="st cooldown"><i></i>cooldown <small>' + s + 's</small></span>';
+    }
+    return '<span class="st disabled"><i></i>disabled <small>401</small></span>';
+  }
+
+  function render() {
+    var tb = $('keyRows');
+    tb.innerHTML = '';
+    KEYS.forEach(function(k) {
+      var tr = document.createElement('tr');
+      var errCls = k.err === 0 ? 'err-ok' : (k.err >= 100 ? 'err-dead' : (k.err > 1.5 ? 'err-bad' : 'err-ok'));
+      var barCls = k.used / k.cap > 0.8 ? ' hot' : '';
+      tr.innerHTML =
+        '<td><b>' + k.provider + '</b></td>' +
+        '<td class="kkey">' + k.key + '</td>' +
+        '<td class="mono">P' + k.prio + '</td>' +
+        '<td class="st-cell">' + statusCell(k) + '</td>' +
+        '<td class="mono">' + k.req.toLocaleString() + '</td>' +
+        '<td class="hide-sm mono">' + k.tok + '</td>' +
+        '<td class="hide-sm mono ' + errCls + '">' + (k.err >= 100 ? '—' : k.err.toFixed(1) + '%') + '</td>' +
+        '<td><span class="bar"><i class="' + barCls.trim() + '" style="width:' + Math.min(100, k.used / k.cap * 100) + '%"></i></span><span class="budg">$' + k.used + '/$' + k.cap + '</span></td>' +
+        '<td>' +
+          '<button class="abtn act-t">' + (k.status === 'disabled' ? 'enable' : 'disable') + '</button>' +
+          '<button class="abtn danger act-r">remove</button>' +
+        '</td>';
+      tr.querySelector('.act-t').addEventListener('click', function() {
+        k.status = k.status === 'disabled' ? 'active' : 'disabled';
+        k.err = k.status === 'disabled' ? 100 : 0;
+        render();
+      });
+      tr.querySelector('.act-r').addEventListener('click', function() {
+        KEYS = KEYS.filter(function(x){ return x.id !== k.id; });
+        render();
+      });
+      tb.appendChild(tr);
+    });
+  }
+
+  setInterval(function() {
+    var hasCool = KEYS.some(function(k){ return k.status === 'cooldown'; });
+    KEYS.forEach(function(k) {
+      if (k.status === 'cooldown' && Date.now() >= k.coolUntil) { k.status = 'active'; k.err = 0.8; hasCool = true; }
+    });
+    if (hasCool) {
+      var cells = document.querySelectorAll('.st-cell');
+      KEYS.forEach(function(k, i) { if (cells[i]) cells[i].innerHTML = statusCell(k); });
+    }
+  }, 1000);
+
+  $('addBtn').addEventListener('click', function() {
+    var keyVal = $('fKey').value.trim();
+    if (!keyVal) { $('fKey').focus(); return; }
+    KEYS.unshift({
+      id:nextId++, provider:$('fProvider').value,
+      key:keyVal.slice(0, 6) + '-***…' + keyVal.slice(-4), prio:+$('fPrio').value || 3,
+      status:'active', req:0, tok:'0', err:0, used:0, cap:+$('fBudget').value || 20
+    });
+    $('fKey').value = '';
+    render();
+  });
+
+  function ts() { return new Date().toTimeString().slice(0, 8); }
+  function pushLog(kind, msg) {
+    var log = $('log');
+    var row = document.createElement('div');
+    row.className = 'log-row';
+    row.innerHTML = '<span class="log-t">' + ts() + '</span><span class="log-k ' + kind + '">' + kind.toUpperCase() + '</span><span class="log-m">' + msg + '</span>';
+    log.insertBefore(row, log.firstChild);
+    while (log.children.length > 14) log.removeChild(log.lastChild);
+  }
+  var SEED = [
+    ['route', 'req #1042 → deepseek#01 · 200 · 743ms · 512 tok'],
+    ['route', 'req #1043 → qwen#04 · 200 · 689ms · 380 tok'],
+    ['failover', '429 on qwen#03 → retried on deepseek#02 · 200 · 812ms'],
+    ['cooldown', 'qwen#03 entering 60s cooldown (rate limit)'],
+    ['route', 'req #1044 → deepseek#02 · 200 · 701ms · 447 tok'],
+    ['recovered', 'qwen#03 cooldown expired — rejoined pool'],
+    ['budget', 'deepseek#01 at 64% of monthly budget']
+  ];
+  SEED.forEach(function(e) { pushLog(e[0], e[1]); });
+
+  var PROV = ['deepseek', 'qwen', 'groq'];
+  setInterval(function() {
+    var r = Math.random();
+    if (r < 0.72) pushLog('route', 'req #' + (1100 + Math.floor(Math.random() * 400)) + ' → ' + PROV[Math.floor(Math.random() * 3)] + '#0' + (1 + Math.floor(Math.random() * 4)) + ' · 200 · ' + (500 + Math.floor(Math.random() * 600)) + 'ms · ' + (150 + Math.floor(Math.random() * 700)) + ' tok');
+    else if (r < 0.82) pushLog('failover', '429 on ' + PROV[Math.floor(Math.random() * 3)] + '#0' + (1 + Math.floor(Math.random() * 4)) + ' → retried, next key · 200');
+    else if (r < 0.9) pushLog('cooldown', PROV[Math.floor(Math.random() * 3)] + '#0' + (1 + Math.floor(Math.random() * 4)) + ' entering 60s cooldown');
+    else if (r < 0.96) pushLog('recovered', 'key cooldown expired — rejoined pool');
+    else pushLog('budget', 'key at ' + (60 + Math.floor(Math.random() * 35)) + '% of monthly budget');
+  }, 3800);
+
+  render();
+})();
+</script>
+</body>
+</html>

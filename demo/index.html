@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AEOX Chat — The engine is the interface</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>A</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Geist+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:#09090b; --bg-2:#0c0c0f; --panel:#0f0f13; --panel-2:#15151b;
+    --border:rgba(255,255,255,.07); --border-2:rgba(255,255,255,.14);
+    --text:#e4e4e7; --text-2:#a1a1aa; --muted:#5f5f68;
+    --accent:#3b82f6; --up:#22c55e; --warn:#f59e0b; --down:#ef4444;
+    --code-bg:#101015; --hover:rgba(255,255,255,.04);
+    --shadow:0 8px 32px rgba(0,0,0,.55);
+  }
+  * { box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent; }
+  body {
+    background:var(--bg); color:var(--text); line-height:1.65; font-size:14px;
+    font-family:"Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  }
+  .mono { font-family:"Geist Mono", "JetBrains Mono", ui-monospace, Consolas, monospace; }
+  a { color:inherit; text-decoration:none; }
+
+  .statusbar {
+    position:sticky; top:0; z-index:10; height:38px; border-bottom:1px solid var(--border);
+    display:flex; align-items:center; gap:18px; padding:0 16px;
+    background:var(--bg); font-size:11px;
+  }
+  .sb-brand { font-weight:700; font-size:12px; letter-spacing:.4px; white-space:nowrap; }
+  .sb-brand .slash { color:var(--muted); }
+  .sb-brand .slash i { font-style:normal; color:var(--accent); }
+  .sb-ver { color:var(--muted); border:1px solid var(--border); border-radius:4px; padding:0 5px; font-size:9.5px; }
+  .sb-sep { width:1px; height:14px; background:var(--border); }
+  .sb-item { color:var(--muted); display:flex; align-items:center; gap:6px; white-space:nowrap; }
+  .sb-item b { color:var(--text-2); font-weight:600; }
+  .sb-dot { width:6px; height:6px; border-radius:50%; display:inline-block; }
+  .sb-links { margin-left:auto; display:flex; gap:4px; }
+  .sb-link { color:var(--muted); padding:3px 10px; border:1px solid transparent; border-radius:6px; font-size:11px; }
+  .sb-link:hover { color:var(--text); border-color:var(--border-2); }
+  .sb-link.here { color:var(--accent); border-color:var(--accent); }
+
+  .wrap { max-width:1100px; margin:0 auto; padding:0 20px; }
+
+  .hero { padding:64px 20px 36px; display:grid; grid-template-columns:1.25fr 1fr; gap:40px; align-items:center; }
+  .eyebrow { font-size:10px; letter-spacing:2.8px; color:var(--accent); font-weight:600; text-transform:uppercase; margin-bottom:14px; }
+  .hero h1 { font-size:42px; line-height:1.12; letter-spacing:-1.4px; font-weight:700; }
+  .hero h1 em { font-style:normal; color:var(--accent); }
+  .hero p.sub { color:var(--text-2); font-size:15px; max-width:520px; margin-top:16px; }
+  .cta { display:flex; gap:9px; margin-top:24px; flex-wrap:wrap; }
+  .btn-solid {
+    border:1px solid var(--accent); background:var(--accent); color:#fff; border-radius:8px;
+    padding:9px 18px; font-size:13px; font-weight:600; transition:filter .15s;
+  }
+  .btn-solid:hover { filter:brightness(1.12); }
+  .btn-ghost {
+    border:1px solid var(--border-2); background:transparent; color:var(--text-2); border-radius:8px;
+    padding:9px 18px; font-size:13px; font-weight:500; transition:border-color .15s, color .15s;
+  }
+  .btn-ghost:hover { border-color:var(--accent); color:var(--text); }
+  .hero-tags { display:flex; gap:7px; flex-wrap:wrap; margin-top:22px; }
+  .htag { font-size:10px; color:var(--muted); border:1px solid var(--border); border-radius:5px; padding:2px 9px;
+    letter-spacing:.8px; }
+
+  .widget { border:1px solid var(--border); border-radius:13px; background:var(--panel); overflow:hidden;
+    box-shadow:var(--shadow); }
+  .widget-head { padding:11px 15px; border-bottom:1px solid var(--border); display:flex; align-items:center; gap:9px; }
+  .widget-head .t { font-size:10px; letter-spacing:2.2px; text-transform:uppercase; color:var(--text-2); font-weight:600; }
+  .widget-head .live { margin-left:auto; display:flex; align-items:center; gap:6px; font-size:9.5px;
+    color:var(--up); letter-spacing:1.5px; font-weight:600; }
+  .widget-head .live i { width:6px; height:6px; border-radius:50%; background:var(--up); animation:pulse 1.6s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.3} }
+  .widget-body { padding:14px 15px; }
+  .w-keys { display:grid; grid-template-columns:1fr 1fr; gap:7px 14px; margin-bottom:14px; }
+  .w-key { display:flex; align-items:center; gap:8px; font-size:11px; color:var(--text-2); }
+  .w-key i { width:7px; height:7px; border-radius:50%; flex-shrink:0; }
+  .w-key .req { margin-left:auto; color:var(--muted); font-size:10px; }
+  .w-key em { font-style:normal; color:var(--warn); font-size:10px; }
+  .w-spark { display:flex; align-items:flex-end; gap:2px; height:34px; margin-bottom:6px; }
+  .w-spark i { flex:1; background:var(--accent); opacity:.7; border-radius:1px; min-height:2px; }
+  .w-foot { display:flex; justify-content:space-between; font-size:10.5px; color:var(--muted); }
+  .w-foot b { color:var(--text-2); font-weight:600; }
+
+  .sec-label { font-size:10px; letter-spacing:2.8px; color:var(--muted); font-weight:600; text-transform:uppercase;
+    margin:44px 0 16px; }
+
+  .cards { display:grid; grid-template-columns:repeat(3, 1fr); gap:12px; padding-bottom:8px; }
+  .card { background:var(--panel); border:1px solid var(--border); border-radius:12px; overflow:hidden;
+    display:flex; flex-direction:column; transition:transform .18s, border-color .18s; }
+  .card:hover { transform:translateY(-3px); border-color:var(--accent); }
+  .vignette { background:var(--code-bg); border-bottom:1px solid var(--border); padding:13px 15px;
+    font-family:"Geist Mono", Consolas, monospace; font-size:10.5px; line-height:1.9; min-height:118px; }
+  .v-dim { color:var(--muted); }
+  .v-mut { color:var(--text-2); }
+  .v-acc { color:var(--accent); }
+  .v-up { color:var(--up); }
+  .v-warn { color:var(--warn); }
+  .card-body { padding:15px 16px 16px; display:flex; flex-direction:column; flex:1; }
+  .card-num { font-size:9.5px; font-weight:700; letter-spacing:2px; color:var(--accent); }
+  .card h3 { font-size:15.5px; margin:4px 0 5px; letter-spacing:-.2px; }
+  .card p { font-size:12px; color:var(--muted); flex:1; }
+  .open { margin-top:13px; font-size:12px; font-weight:600; color:var(--text-2); }
+  .card:hover .open { color:var(--accent); }
+
+  .steps { display:grid; grid-template-columns:repeat(3, 1fr); gap:11px; }
+  .step { border:1px solid var(--border); border-radius:11px; padding:15px 17px; background:var(--bg-2); }
+  .step .n { font-size:9.5px; font-weight:700; letter-spacing:2px; color:var(--accent); }
+  .step h3 { font-size:13.5px; margin:4px 0 5px; }
+  .step p { font-size:12px; color:var(--muted); }
+  .step code { background:var(--code-bg); border:1px solid var(--border); border-radius:4px; padding:0 5px;
+    font-family:"Geist Mono", Consolas, monospace; font-size:11px; color:var(--text-2); }
+
+  .foot-line { border-top:1px solid var(--border); margin-top:52px; }
+  .foot-line p { max-width:1100px; margin:0 auto; padding:16px 20px 30px; font-size:10.5px; color:var(--muted); }
+  .foot-line a { color:var(--text-2); }
+  .foot-line a:hover { color:var(--accent); }
+
+  @media (max-width: 940px) {
+    .hero { grid-template-columns:1fr; padding-top:44px; gap:28px; }
+    .hero h1 { font-size:30px; }
+    .cards, .steps { grid-template-columns:1fr; }
+  }
+  ::-webkit-scrollbar { width:8px; height:8px; }
+  ::-webkit-scrollbar-thumb { background:var(--border); border-radius:99px; }
+  ::-webkit-scrollbar-thumb:hover { background:var(--border-2); }
+  ::-webkit-scrollbar-track { background:transparent; }
+</style>
+</head>
+<body>
+<header class="statusbar mono">
+  <span class="sb-brand">AEOX <span class="slash">// <i>CHAT</i></span></span>
+  <span class="sb-ver">v0.1-beta</span>
+  <span class="sb-sep"></span>
+  <span class="sb-item"><i class="sb-dot" style="background:var(--up)"></i>pool <b id="sbPool">4/6</b></span>
+  <span class="sb-item">routed <b id="sbRouted">1,284</b></span>
+  <nav class="sb-links">
+    <a class="sb-link" href="chat.html">chat</a>
+    <a class="sb-link" href="engine.html">engine</a>
+    <a class="sb-link" href="admin.html">admin</a>
+    <a class="sb-link here" href="index.html">hub</a>
+  </nav>
+</header>
+
+<div class="wrap">
+  <div class="hero">
+    <div>
+      <div class="eyebrow mono">// multi-engine ai playground</div>
+      <h1>The engine is <em>the interface.</em></h1>
+      <p class="sub">One minimal chat stream, served by a pool of AI keys that route, fail over and self-heal — in public view. No accounts, no tracking; every answer is signed with the engine that produced it.</p>
+      <div class="cta">
+        <a class="btn-solid" href="chat.html">open chat demo →</a>
+        <a class="btn-ghost" href="engine.html">engine console</a>
+      </div>
+      <div class="hero-tags mono">
+        <span class="htag">NO ACCOUNT</span>
+        <span class="htag">DARK-ONLY</span>
+        <span class="htag">OPENAI-COMPATIBLE</span>
+        <span class="htag">LOCAL-FIRST</span>
+      </div>
+    </div>
+
+    <div class="widget">
+      <div class="widget-head">
+        <span class="t mono">Engine</span>
+        <span class="live mono"><i></i>SIMULATED LIVE</span>
+      </div>
+      <div class="widget-body">
+        <div class="w-keys mono" id="wKeys"></div>
+        <div class="w-spark" id="wSpark"></div>
+        <div class="w-foot mono">
+          <span>ttft · last 12s</span>
+          <span><b id="wRouted">1,284</b> routed today</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="sec-label mono">demos — open in browser</div>
+  <div class="cards">
+    <a class="card" href="chat.html">
+      <div class="vignette">
+        <div><span class="v-acc">&gt;</span> <span class="v-mut">why multiple keys?</span></div>
+        <div class="v-dim">aeox // ai</div>
+        <div class="v-dim">resilience and cost control…</div>
+        <div><span class="v-warn">⟲ failover: qwen#03 429 → deepseek#02</span></div>
+        <div><span class="v-acc">[ deepseek-v3 ]</span> <span class="v-acc">[ key#02 ]</span> <span class="v-dim">[ 812ms ]</span> <span class="v-up">[ 200 OK ]</span></div>
+      </div>
+      <div class="card-body">
+        <div class="card-num mono">01 /</div>
+        <h3>Chat</h3>
+        <p>The customer-facing stream: open layout, block-cursor streaming, inline failover events, badge rows with raw SSE traces — plus the live engine panel on the right.</p>
+        <span class="open">open demo →</span>
+      </div>
+    </a>
+    <a class="card" href="engine.html">
+      <div class="vignette">
+        <div><span class="v-dim">12:04:31</span> <span class="v-dim">ROUTE</span> <span class="v-mut">req #1042 → deepseek#01 · 200</span></div>
+        <div><span class="v-dim">12:04:33</span> <span class="v-warn">FAILOVER</span> <span class="v-mut">429 → retried · 200</span></div>
+        <div><span class="v-dim">12:04:36</span> <span class="v-warn">COOLDOWN</span> <span class="v-mut">qwen#03 · 60s</span></div>
+        <div><span class="v-dim">12:05:36</span> <span class="v-up">RECOVERED</span> <span class="v-mut">rejoined pool</span></div>
+      </div>
+      <div class="card-body">
+        <div class="card-num mono">02 /</div>
+        <h3>Engine console</h3>
+        <p>The machine room, full view: routing feed, key rack with cooldown countdowns, priority / round-robin / weighted strategies — switchable live.</p>
+        <span class="open">open demo →</span>
+      </div>
+    </a>
+    <a class="card" href="admin.html">
+      <div class="vignette">
+        <div class="v-mut">deepseek#01 <span class="v-up">●</span> <span class="v-dim">P1 · 642 req</span></div>
+        <div class="v-mut">qwen#03 <span class="v-warn">◐</span> <span class="v-dim">cooldown 42s</span></div>
+        <div class="v-mut">openrouter#06 <span style="color:var(--down)">●</span> <span class="v-dim">401 · disabled</span></div>
+        <div class="v-dim">budget deepseek#01 ▓▓▓▓▓▓░░░░ $64/$100</div>
+      </div>
+      <div class="card-body">
+        <div class="card-num mono">03 /</div>
+        <h3>Admin</h3>
+        <p>The only back-office: bind provider keys, set priorities and monthly budgets, watch usage, error rates and the engine log. Keys encrypted at rest.</p>
+        <span class="open">open demo →</span>
+      </div>
+    </a>
+  </div>
+
+  <div class="sec-label mono">how the engine works</div>
+  <div class="steps">
+    <div class="step"><div class="n mono">01 / SELECT</div><h3>Pick by strategy</h3>
+      <p>Choose a key by <code>priority</code>, <code>round-robin</code> or <code>weighted</code> — always skipping keys in cooldown or over budget.</p></div>
+    <div class="step"><div class="n mono">02 / DETECT</div><h3>Classify failure</h3>
+      <p><code>401/403</code> disables the key and flags it in admin. <code>429/5sx</code> starts a 60s cooldown; the request retries on the next key mid-stream.</p></div>
+    <div class="step"><div class="n mono">03 / RECOVER</div><h3>Self-heal</h3>
+      <p>Expired cooldowns rejoin the pool automatically. Monthly budget caps are the final guard — exhausted keys are skipped until reset.</p></div>
+  </div>
+</div>
+
+<div class="foot-line">
+  <p class="mono">© 2026 AEOX — <a href="https://aeox.uk/" rel="noopener" target="_blank">aeox.uk</a> · concept demo set for chat.aeox.uk · simulated locally, no upstream calls · node 22 · hono · sqlite · sse</p>
+</div>
+
+<script>
+(function () {
+  'use strict';
+  var POOL = [
+    { prov:'deepseek #01', status:'up', req:642 },
+    { prov:'deepseek #02', status:'up', req:411 },
+    { prov:'qwen #03', status:'cooldown', req:118 },
+    { prov:'qwen #04', status:'up', req:96 },
+    { prov:'groq #05', status:'up', req:17 },
+    { prov:'openrouter #06', status:'disabled', req:0 }
+  ];
+  var spark = [64,71,49,66,58,73,61,55,68,62,64,59];
+  var routed = 1284;
+
+  function $(id) { return document.getElementById(id); }
+  function renderKeys() {
+    var box = $('wKeys');
+    box.innerHTML = '';
+    POOL.forEach(function(k) {
+      var dot = k.status === 'up' ? 'var(--up)' : (k.status === 'cooldown' ? 'var(--warn)' : 'var(--down)');
+      var name = k.prov;
+      if (k.status === 'cooldown') name += ' <em>cooldown</em>';
+      var cls = k.status === 'disabled' ? ' style="opacity:.45"' : '';
+      box.insertAdjacentHTML('beforeend',
+        '<div class="w-key"' + cls + '><i style="background:' + dot + '"></i>' + name +
+        '<span class="req">' + k.req + '</span></div>');
+    });
+  }
+  function renderSpark() {
+    var box = $('wSpark');
+    box.innerHTML = '';
+    spark.forEach(function(v) {
+      var i = document.createElement('i');
+      i.style.height = Math.max(8, v / 90 * 100) + '%';
+      box.appendChild(i);
+    });
+  }
+  setInterval(function() {
+    var act = POOL.filter(function(k){ return k.status === 'up'; });
+    if (act.length) act[Math.floor(Math.random() * act.length)].req++;
+    routed++;
+    spark.push(30 + Math.floor(Math.random() * 55)); spark.shift();
+    $('wRouted').textContent = routed.toLocaleString();
+    $('sbRouted').textContent = routed.toLocaleString();
+    renderKeys();
+    renderSpark();
+  }, 1500);
+
+  renderKeys();
+  renderSpark();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,328 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>aeox chat — admin</title>
+<meta name="robots" content="noindex">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>A</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Geist+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:#09090b; --bg-2:#0c0c0f; --panel:#0f0f13; --panel-2:#15151b;
+    --border:rgba(255,255,255,.07); --border-2:rgba(255,255,255,.14);
+    --text:#e4e4e7; --text-2:#a1a1aa; --muted:#5f5f68;
+    --accent:#3b82f6; --up:#22c55e; --warn:#f59e0b; --down:#ef4444;
+    --code-bg:#101015; --hover:rgba(255,255,255,.04);
+    --shadow:0 8px 32px rgba(0,0,0,.55);
+  }
+  * { box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent; }
+  body {
+    background:var(--bg); color:var(--text); line-height:1.65; font-size:14px;
+    font-family:"Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Microsoft YaHei", sans-serif;
+  }
+  .mono { font-family:"Geist Mono", "JetBrains Mono", ui-monospace, Consolas, monospace; }
+  a { color:inherit; text-decoration:none; }
+  button { font-family:inherit; }
+
+  .statusbar {
+    position:sticky; top:0; z-index:10; height:38px; border-bottom:1px solid var(--border);
+    display:flex; align-items:center; gap:18px; padding:0 16px;
+    background:var(--bg); font-size:11px;
+  }
+  .sb-brand { font-weight:700; font-size:12px; letter-spacing:.4px; white-space:nowrap; }
+  .sb-brand .slash { color:var(--muted); }
+  .sb-brand .slash i { font-style:normal; color:var(--accent); }
+  .sb-ver { color:var(--muted); border:1px solid var(--border); border-radius:4px; padding:0 5px; font-size:9.5px; }
+  .sb-sep { width:1px; height:14px; background:var(--border); }
+  .sb-item { color:var(--muted); display:flex; align-items:center; gap:6px; white-space:nowrap; }
+  .sb-item b { color:var(--text-2); font-weight:600; }
+  .sb-links { margin-left:auto; display:flex; gap:4px; }
+  .sb-link { color:var(--muted); padding:3px 10px; border:1px solid transparent; border-radius:6px; font-size:11px;
+    background:transparent; cursor:pointer; }
+  .sb-link:hover { color:var(--text); border-color:var(--border-2); }
+  .sb-link.here { color:var(--accent); border-color:var(--accent); }
+
+  .login-view { min-height:calc(100vh - 38px); display:flex; align-items:center; justify-content:center; padding:20px; }
+  .login-card { width:340px; background:var(--panel); border:1px solid var(--border); border-radius:13px;
+    padding:26px 24px; box-shadow:var(--shadow); }
+  .login-card .ai-mark { width:44px; height:44px; border-radius:11px; background:var(--accent); color:#fff;
+    display:flex; align-items:center; justify-content:center; font-size:19px; font-weight:800; margin:0 auto 18px; }
+  .login-card h1 { font-size:16px; font-weight:600; text-align:center; margin-bottom:3px; }
+  .login-card .hint { font-size:10.5px; color:var(--muted); text-align:center; margin-bottom:18px; }
+  .login-card input {
+    width:100%; background:var(--bg-2); border:1px solid var(--border); border-radius:8px;
+    color:var(--text); padding:9px 12px; font-size:13px; font-family:inherit; outline:none;
+    transition:border-color .15s;
+  }
+  .login-card input:focus { border-color:var(--accent); }
+  .login-err { font-size:11px; color:var(--down); min-height:18px; margin:8px 0 4px; text-align:center; }
+  .btn {
+    border:1px solid var(--accent); border-radius:8px; background:var(--accent); color:#fff;
+    padding:8px 16px; font-size:12.5px; font-weight:600; cursor:pointer; font-family:inherit;
+    transition:filter .15s; width:100%;
+  }
+  .btn:hover { filter:brightness(1.12); }
+
+  .wrap { max-width:1100px; margin:0 auto; padding:26px 20px 50px; }
+  .page-head { margin-bottom:20px; display:flex; align-items:flex-start; gap:14px; }
+  .page-head h1 { font-size:20px; font-weight:600; letter-spacing:-.3px; }
+  .page-head p { color:var(--muted); font-size:12.5px; max-width:640px; margin-top:3px; }
+  .logout-btn { margin-left:auto; flex-shrink:0; border:1px solid var(--border); background:transparent; color:var(--muted);
+    border-radius:7px; padding:5px 13px; font-size:11.5px; cursor:pointer; font-family:inherit;
+    transition:color .15s, border-color .15s; }
+  .logout-btn:hover { color:var(--down); border-color:var(--down); }
+
+  .stats { display:grid; grid-template-columns:repeat(4, 1fr); gap:10px; margin-bottom:22px; }
+  .stat { border:1px solid var(--border); border-radius:9px; padding:11px 14px; background:var(--bg-2); }
+  .stat .k { font-size:9.5px; color:var(--muted); text-transform:uppercase; letter-spacing:1.8px; }
+  .stat .v { font-size:19px; font-weight:600; letter-spacing:-.4px; margin-top:1px; }
+  .stat .v small { font-size:11px; color:var(--muted); font-weight:400; }
+
+  .panel { background:var(--panel); border:1px solid var(--border); border-radius:11px; overflow:hidden; }
+  .panel-head { padding:11px 15px; border-bottom:1px solid var(--border); display:flex; align-items:center; gap:10px; }
+  .panel-head h2 { font-size:11px; letter-spacing:2px; text-transform:uppercase; color:var(--text-2); font-weight:600; }
+  .panel-head small { color:var(--muted); font-size:10px; }
+
+  table { width:100%; border-collapse:collapse; font-size:12.5px; }
+  th { text-align:left; font-size:9.5px; text-transform:uppercase; letter-spacing:1.6px; color:var(--muted);
+    font-weight:600; padding:10px 14px; border-bottom:1px solid var(--border); white-space:nowrap; }
+  td { padding:11px 14px; border-bottom:1px solid var(--border); vertical-align:middle; white-space:nowrap; }
+  tr:last-child td { border-bottom:none; }
+  tr:hover td { background:var(--hover); }
+  .empty-row { text-align:center; color:var(--muted); font-size:12px; padding:26px 14px; }
+  .kkey { font-family:"Geist Mono", Consolas, monospace; font-size:11px; color:var(--muted); }
+  .st { display:inline-flex; align-items:center; gap:6px; font-size:11px; font-weight:600;
+    font-family:"Geist Mono", Consolas, monospace; }
+  .st i { width:6px; height:6px; border-radius:50%; background:currentColor; }
+  .st.active { color:var(--up); }
+  .st.cooldown { color:var(--warn); }
+  .st.disabled { color:var(--down); }
+  .st.nokey { color:var(--muted); }
+  .st small { font-weight:400; opacity:.85; }
+  .bar { width:80px; height:4px; border-radius:99px; background:var(--panel-2); overflow:hidden; display:inline-block;
+    vertical-align:middle; margin-right:8px; }
+  .bar i { display:block; height:100%; background:var(--accent); border-radius:99px; }
+  .budg { font-size:10.5px; color:var(--muted); font-family:"Geist Mono", Consolas, monospace; }
+  .abtn { border:1px solid var(--border); background:transparent; color:var(--muted); border-radius:6px;
+    padding:3px 9px; font-size:11px; cursor:pointer; font-family:inherit; margin-right:5px;
+    transition:color .15s, border-color .15s; }
+  .abtn:hover { color:var(--text); border-color:var(--border-2); }
+  .abtn.danger:hover { color:var(--down); border-color:var(--down); }
+  .abtn:disabled { opacity:.6; cursor:default; }
+
+  .grid2 { display:grid; grid-template-columns:1fr 1.25fr; gap:11px; margin-top:11px; align-items:start; }
+  .form-body { padding:14px 15px; display:grid; gap:11px; }
+  .frow2 { display:grid; grid-template-columns:1fr 1fr; gap:11px; }
+  .field label { display:block; font-size:10px; color:var(--muted); margin-bottom:4px;
+    text-transform:uppercase; letter-spacing:1.5px; }
+  .field input, .field select {
+    width:100%; background:var(--bg-2); border:1px solid var(--border); border-radius:7px;
+    color:var(--text); padding:7px 10px; font-size:12.5px; font-family:inherit; outline:none;
+    transition:border-color .15s;
+  }
+  .field input:focus, .field select:focus { border-color:var(--accent); }
+  .btn.solid { width:auto; justify-self:start; }
+  .hint { font-size:10.5px; color:var(--muted); }
+  .add-err { font-size:11px; color:var(--down); min-height:14px; }
+
+  .log { padding:9px 13px; max-height:320px; overflow-y:auto; font-family:"Geist Mono", Consolas, monospace; font-size:11px; }
+  .log-row { display:flex; gap:10px; padding:4.5px 2px; border-bottom:1px dashed var(--border); align-items:baseline; }
+  .log-row:last-child { border-bottom:none; }
+  .log-t { color:var(--muted); flex-shrink:0; }
+  .log-k { flex-shrink:0; width:80px; font-weight:600; font-size:10px; letter-spacing:.8px; }
+  .log-k.route { color:var(--muted); } .log-k.failover, .log-k.cooldown { color:var(--warn); }
+  .log-k.recovered { color:var(--up); } .log-k.budget, .log-k.disabled { color:var(--accent); }
+  .log-m { color:var(--text-2); }
+
+  .seo-panel { margin-top:11px; }
+  .seo-body { padding:14px 15px; display:grid; gap:13px; }
+  .seo-cols { display:grid; grid-template-columns:1fr 1fr; gap:13px; }
+  .seo-body textarea {
+    width:100%; background:var(--bg-2); border:1px solid var(--border); border-radius:7px;
+    color:var(--text); padding:9px 11px; font-size:11.5px; font-family:"Geist Mono", Consolas, monospace;
+    outline:none; resize:vertical; min-height:130px; line-height:1.55;
+    transition:border-color .15s;
+  }
+  .seo-body textarea:focus { border-color:var(--accent); }
+  .seo-meta-grid { display:grid; grid-template-columns:1fr 1fr; gap:11px; }
+  .seo-actions { display:flex; gap:10px; align-items:center; }
+  .ghost-btn { border:1px solid var(--border); background:transparent; color:var(--muted); border-radius:7px;
+    padding:7px 14px; font-size:12px; cursor:pointer; font-family:inherit; transition:color .15s, border-color .15s; }
+  .ghost-btn:hover { color:var(--text); border-color:var(--border-2); }
+  .sec-label { font-size:10px; color:var(--muted); text-transform:uppercase; letter-spacing:1.5px; margin-bottom:4px; }
+
+  .foot-line { max-width:1100px; margin:26px auto 0; padding:16px 20px 30px; font-size:10.5px; color:var(--muted);
+    border-top:1px solid var(--border); }
+
+  @media (max-width: 900px) {
+    .stats { grid-template-columns:1fr 1fr; }
+    .grid2 { grid-template-columns:1fr; }
+    .seo-cols { grid-template-columns:1fr; }
+    .hide-sm { display:none; }
+  }
+  ::-webkit-scrollbar { width:8px; height:8px; }
+  ::-webkit-scrollbar-thumb { background:var(--border); border-radius:99px; }
+  ::-webkit-scrollbar-thumb:hover { background:var(--border-2); }
+  ::-webkit-scrollbar-track { background:transparent; }
+</style>
+</head>
+<body>
+<header class="statusbar mono">
+  <span class="sb-brand">AEOX <span class="slash">// <i>CHAT</i></span></span>
+  <span class="sb-ver">v0.1-beta</span>
+  <span class="sb-sep"></span>
+  <span class="sb-item"><i class="sb-dot" style="background:var(--up)"></i><span data-i18n="sb.pool"></span> <b id="sbPool">—</b></span>
+  <span class="sb-item">admin</span>
+    <nav class="sb-links">
+      <a class="sb-link" href="/">hub</a>
+      <a class="sb-link" href="/chat">chat</a>
+      <a class="sb-link" href="/engine">engine</a>
+      <a class="sb-link here" href="/admin">admin</a>
+      <button class="sb-link" id="langBtn" type="button">EN</button>
+    </nav>
+</header>
+
+<div class="login-view" id="loginView" style="display:none">
+  <div class="login-card">
+    <div class="ai-mark">A</div>
+    <h1 data-i18n="adm.loginTitle"></h1>
+    <div class="hint mono" data-i18n="adm.loginHint"></div>
+    <input id="loginPw" type="password" autocomplete="current-password" data-i18n-ph="adm.password">
+    <div class="login-err mono" id="loginErr"></div>
+    <button class="btn" id="loginBtn" type="button" data-i18n="adm.enter"></button>
+  </div>
+</div>
+
+<div class="wrap" id="appView" style="display:none">
+  <div class="page-head">
+    <div>
+      <h1 data-i18n="adm.title"></h1>
+      <p data-i18n="adm.desc"></p>
+    </div>
+    <button class="logout-btn" id="logoutBtn" type="button" data-i18n="adm.logout"></button>
+  </div>
+
+  <div class="stats mono">
+    <div class="stat"><div class="k" data-i18n="adm.statKeys"></div><div class="v" id="statKeys">—</div></div>
+    <div class="stat"><div class="k" data-i18n="adm.statReq"></div><div class="v" id="statReq">—</div></div>
+    <div class="stat"><div class="k" data-i18n="adm.statTok"></div><div class="v" id="statTok">—</div></div>
+    <div class="stat"><div class="k" data-i18n="adm.statFov"></div><div class="v" id="statFov">—</div></div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head"><h2 data-i18n="adm.keys"></h2><small data-i18n="adm.keysHint"></small></div>
+    <div style="overflow-x:auto">
+      <table>
+        <thead><tr>
+          <th data-i18n="adm.provider"></th><th data-i18n="adm.keyCol"></th><th data-i18n="adm.model"></th>
+          <th data-i18n="adm.prio"></th><th data-i18n="adm.status"></th><th data-i18n="adm.req"></th>
+          <th class="hide-sm" data-i18n="adm.tok"></th><th class="hide-sm" data-i18n="adm.cost"></th>
+          <th data-i18n="adm.budget"></th><th></th>
+        </tr></thead>
+        <tbody id="keyRows"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="grid2">
+    <div class="panel">
+      <div class="panel-head"><h2 data-i18n="adm.addTitle"></h2></div>
+      <div class="form-body">
+        <div class="frow2">
+          <div class="field"><label data-i18n="adm.provider"></label>
+            <select id="fProvider"></select>
+          </div>
+          <div class="field" id="nameRow" style="display:none"><label data-i18n="adm.provider"></label>
+            <input id="fName" type="text" placeholder="my-provider">
+          </div>
+          <div class="field"><label data-i18n="adm.prio"></label>
+            <input id="fPrio" type="number" value="10">
+          </div>
+        </div>
+        <div class="field"><label data-i18n="adm.baseUrl"></label>
+          <input id="fBaseUrl" type="text" placeholder="https://api.example.com/v1">
+        </div>
+        <div class="field"><label data-i18n="adm.model"></label>
+          <input id="fModel" type="text" placeholder="model-id">
+        </div>
+        <div class="field"><label data-i18n="adm.apikey"></label>
+          <input id="fKey" type="password" placeholder="sk-...">
+        </div>
+        <div class="field"><label data-i18n="adm.budgetLabel"></label>
+          <input id="fBudget" type="number" min="0" step="0.5" value="0">
+        </div>
+        <div class="add-err mono" id="addErr"></div>
+        <button class="btn solid" id="addBtn" type="button" data-i18n="adm.add"></button>
+        <div class="hint" data-i18n="adm.addHint"></div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head"><h2 data-i18n="adm.log"></h2><small data-i18n="adm.live"></small></div>
+      <div class="log" id="log"></div>
+    </div>
+  </div>
+
+  <div class="panel seo-panel">
+    <div class="panel-head"><h2 data-i18n="adm.kb"></h2><small data-i18n="adm.kbHint"></small></div>
+    <div class="seo-body">
+      <div>
+        <div class="sec-label" data-i18n="adm.kbLabel"></div>
+        <textarea id="kbText" spellcheck="false" style="min-height:220px"></textarea>
+      </div>
+      <div class="seo-actions">
+        <button class="btn solid" id="kbSave" type="button" data-i18n="adm.save"></button>
+        <button class="ghost-btn" id="kbReset" type="button" data-i18n="adm.reset"></button>
+        <span class="hint" data-i18n="adm.kbNote"></span>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel seo-panel">
+    <div class="panel-head"><h2 data-i18n="adm.seo"></h2><small data-i18n="adm.seoHint"></small></div>
+    <div class="seo-body">
+      <div class="seo-cols">
+        <div>
+          <div class="sec-label" data-i18n="adm.robots"></div>
+          <textarea id="seoRobots" spellcheck="false"></textarea>
+        </div>
+        <div>
+          <div class="sec-label" data-i18n="adm.sitemap"></div>
+          <textarea id="seoSitemap" spellcheck="false"></textarea>
+        </div>
+      </div>
+      <div class="seo-cols">
+        <div>
+          <div class="sec-label" data-i18n="adm.llms"></div>
+          <textarea id="seoLlms" spellcheck="false"></textarea>
+        </div>
+        <div>
+          <div class="sec-label" data-i18n="adm.ai"></div>
+          <textarea id="seoAi" spellcheck="false"></textarea>
+        </div>
+      </div>
+      <div>
+        <div class="sec-label" data-i18n="adm.siteMeta"></div>
+        <div class="seo-meta-grid">
+          <div class="field"><label data-i18n="adm.titleEn"></label><input id="metaTitleEn" type="text"></div>
+          <div class="field"><label data-i18n="adm.titleZh"></label><input id="metaTitleZh" type="text"></div>
+          <div class="field"><label data-i18n="adm.descEn"></label><input id="metaDescEn" type="text"></div>
+          <div class="field"><label data-i18n="adm.descZh"></label><input id="metaDescZh" type="text"></div>
+        </div>
+      </div>
+      <div class="seo-actions">
+        <button class="btn solid" id="seoSave" type="button" data-i18n="adm.save"></button>
+        <button class="ghost-btn" id="seoReset" type="button" data-i18n="adm.reset"></button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="foot-line mono">© 2026 AEOX — aeox.uk</div>
+
+<script type="module" src="/assets/admin.js"></script>
+</body>
+</html>

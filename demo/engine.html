@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AEOX Chat — Demo · Key Engine</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>A</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Geist+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:#09090b; --bg-2:#0c0c0f; --panel:#0f0f13; --panel-2:#15151b;
+    --border:rgba(255,255,255,.07); --border-2:rgba(255,255,255,.14);
+    --text:#e4e4e7; --text-2:#a1a1aa; --muted:#5f5f68;
+    --accent:#3b82f6; --up:#22c55e; --warn:#f59e0b; --down:#ef4444;
+    --code-bg:#101015; --hover:rgba(255,255,255,.04);
+    --shadow:0 8px 32px rgba(0,0,0,.55);
+  }
+  * { box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent; }
+  body {
+    background:var(--bg); color:var(--text); line-height:1.65; font-size:14px;
+    font-family:"Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  }
+  .mono { font-family:"Geist Mono", "JetBrains Mono", ui-monospace, Consolas, monospace; }
+  a { color:inherit; text-decoration:none; }
+
+  .statusbar {
+    position:sticky; top:0; z-index:10; height:38px; border-bottom:1px solid var(--border);
+    display:flex; align-items:center; gap:18px; padding:0 16px;
+    background:var(--bg); font-size:11px;
+  }
+  .sb-brand { font-weight:700; font-size:12px; letter-spacing:.4px; white-space:nowrap; }
+  .sb-brand .slash { color:var(--muted); }
+  .sb-brand .slash i { font-style:normal; color:var(--accent); }
+  .sb-ver { color:var(--muted); border:1px solid var(--border); border-radius:4px; padding:0 5px; font-size:9.5px; }
+  .sb-sep { width:1px; height:14px; background:var(--border); }
+  .sb-item { color:var(--muted); display:flex; align-items:center; gap:6px; white-space:nowrap; }
+  .sb-item b { color:var(--text-2); font-weight:600; }
+  .sb-dot { width:6px; height:6px; border-radius:50%; display:inline-block; }
+  .sb-links { margin-left:auto; display:flex; gap:4px; }
+  .sb-link { color:var(--muted); padding:3px 10px; border:1px solid transparent; border-radius:6px; font-size:11px; }
+  .sb-link:hover { color:var(--text); border-color:var(--border-2); }
+  .sb-link.here { color:var(--accent); border-color:var(--accent); }
+
+  .wrap { max-width:1180px; margin:0 auto; padding:26px 20px 50px; }
+
+  .page-head { display:flex; align-items:center; gap:14px; flex-wrap:wrap; margin-bottom:18px; }
+  .page-head h1 { font-size:20px; font-weight:600; letter-spacing:-.3px; }
+  .live { display:flex; align-items:center; gap:7px; font-size:10px; font-weight:600;
+    color:var(--up); border:1px solid var(--up); border-radius:999px; padding:3px 11px; letter-spacing:1.5px; }
+  .live i { width:7px; height:7px; border-radius:50%; background:var(--up); animation:pulse 1.6s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.3} }
+
+  .controls { display:flex; align-items:center; gap:14px; flex-wrap:wrap; margin-bottom:8px; }
+  .seg { display:inline-flex; border:1px solid var(--border-2); border-radius:8px; overflow:hidden; }
+  .seg button { border:none; background:transparent; color:var(--muted); padding:5px 15px; font-size:11.5px;
+    cursor:pointer; font-family:"Geist Mono", Consolas, monospace; border-right:1px solid var(--border); }
+  .seg button:last-child { border-right:none; }
+  .seg button.active { background:var(--hover); color:var(--accent); font-weight:600; }
+  .seg-desc { font-size:11.5px; color:var(--muted); }
+
+  .stats { display:grid; grid-template-columns:repeat(5, 1fr); gap:10px; margin:16px 0; }
+  .stat { border:1px solid var(--border); border-radius:9px; padding:10px 13px; background:var(--bg-2); }
+  .stat .k { font-size:9.5px; color:var(--muted); text-transform:uppercase; letter-spacing:1.8px; }
+  .stat .v { font-size:18px; font-weight:600; letter-spacing:-.4px; margin-top:1px; }
+  .stat .v small { font-size:11px; color:var(--muted); font-weight:400; }
+
+  .grid { display:grid; grid-template-columns:1.5fr 1fr; gap:12px; align-items:stretch; }
+  .panel { background:var(--panel); border:1px solid var(--border); border-radius:11px; overflow:hidden; }
+  .panel-head { padding:11px 15px; border-bottom:1px solid var(--border); display:flex; align-items:center; gap:10px; }
+  .panel-head h2 { font-size:11px; letter-spacing:2px; text-transform:uppercase; color:var(--text-2); font-weight:600; }
+  .panel-head small { color:var(--muted); font-size:10px; }
+
+  .feed { font-family:"Geist Mono", Consolas, monospace; font-size:11.5px; padding:10px 13px;
+    height:398px; overflow-y:auto; }
+  .frow { display:flex; gap:10px; padding:4px 2px; border-bottom:1px dashed var(--border); align-items:baseline; }
+  .frow:last-child { border-bottom:none; }
+  .ft { color:var(--muted); flex-shrink:0; }
+  .fk { flex-shrink:0; width:82px; font-weight:600; font-size:10px; letter-spacing:.8px; }
+  .fk.route { color:var(--muted); } .fk.failover, .fk.cooldown { color:var(--warn); }
+  .fk.recovered { color:var(--up); } .fk.budget { color:var(--accent); }
+  .fm { color:var(--text-2); }
+  .fm b { color:var(--text); font-weight:600; }
+
+  .rack { padding:12px; display:grid; grid-template-columns:1fr 1fr; gap:9px; align-content:start; }
+  .kcard { border:1px solid var(--border); border-radius:9px; padding:11px 12px; background:var(--bg-2);
+    position:relative; transition:border-color .25s; }
+  .kcard.next { border-color:var(--accent); box-shadow:0 0 0 1px var(--accent); }
+  .kcard.off { opacity:.5; }
+  .kcard .prov { font-size:12px; font-weight:600; display:flex; align-items:center; gap:7px; }
+  .kdot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+  .kdot.up { background:var(--up); } .kdot.warn { background:var(--warn); animation:pulse 1.6s infinite; }
+  .kdot.down { background:var(--down); }
+  .kcard .kk { font-family:"Geist Mono", Consolas, monospace; font-size:10.5px; color:var(--muted); margin:3px 0 7px; }
+  .kcard .meta { display:flex; justify-content:space-between; font-size:10.5px; color:var(--muted); }
+  .kcard .meta b { color:var(--text-2); font-weight:600; }
+  .kcard .meta .cd { color:var(--warn); }
+  .hbar { height:4px; border-radius:99px; background:var(--panel-2); margin-top:7px; overflow:hidden; }
+  .hbar i { display:block; height:100%; border-radius:99px; background:var(--up); }
+  .hbar i.warn { background:var(--warn); }
+  .next-tag { position:absolute; top:-8px; right:9px; font-size:8.5px; font-weight:700; letter-spacing:1.5px;
+    background:var(--accent); color:#fff; border-radius:4px; padding:1px 7px; }
+
+  .steps { display:grid; grid-template-columns:repeat(3, 1fr); gap:10px; margin-top:12px; }
+  .step { border:1px solid var(--border); border-radius:10px; padding:13px 15px; background:var(--bg-2); }
+  .step .n { font-size:9.5px; font-weight:700; letter-spacing:2px; color:var(--accent); }
+  .step h3 { font-size:13px; margin:3px 0 4px; }
+  .step p { font-size:11.5px; color:var(--muted); }
+  .step code { background:var(--code-bg); border:1px solid var(--border); border-radius:4px; padding:0 5px;
+    font-family:"Geist Mono", Consolas, monospace; font-size:10.5px; color:var(--text-2); }
+
+  .foot-line { max-width:1180px; margin:0 auto; padding:16px 20px 30px; font-size:10.5px; color:var(--muted);
+    border-top:1px solid var(--border); margin-top:26px; }
+
+  @media (max-width: 940px) {
+    .grid { grid-template-columns:1fr; }
+    .stats { grid-template-columns:repeat(2, 1fr); }
+    .steps { grid-template-columns:1fr; }
+    .feed { height:300px; }
+  }
+  ::-webkit-scrollbar { width:8px; height:8px; }
+  ::-webkit-scrollbar-thumb { background:var(--border); border-radius:99px; }
+  ::-webkit-scrollbar-thumb:hover { background:var(--border-2); }
+  ::-webkit-scrollbar-track { background:transparent; }
+</style>
+</head>
+<body>
+<header class="statusbar mono">
+  <span class="sb-brand">AEOX <span class="slash">// <i>CHAT</i></span></span>
+  <span class="sb-ver">v0.1-beta</span>
+  <span class="sb-sep"></span>
+  <span class="sb-item"><i class="sb-dot" style="background:var(--up)"></i>pool <b id="sbPool">4/6</b></span>
+  <span class="sb-item">routed <b id="sbRouted">1,284</b></span>
+  <span class="sb-item">failover <b>0.4%</b></span>
+  <span class="sb-item">burn <b id="sbBurn">$1.92</b></span>
+  <nav class="sb-links">
+    <a class="sb-link" href="chat.html">chat</a>
+    <a class="sb-link here" href="engine.html">engine</a>
+    <a class="sb-link" href="admin.html">admin</a>
+    <a class="sb-link" href="index.html">hub</a>
+  </nav>
+</header>
+
+<div class="wrap">
+  <div class="page-head">
+    <h1>Key engine — live routing</h1>
+    <span class="live mono"><i></i>SIMULATED&nbsp;LIVE</span>
+  </div>
+
+  <div class="controls">
+    <div class="seg" id="seg">
+      <button data-s="priority" class="active">priority</button>
+      <button data-s="rr">round-robin</button>
+      <button data-s="weighted">weighted</button>
+    </div>
+    <span class="seg-desc mono" id="segDesc"></span>
+  </div>
+
+  <div class="stats mono">
+    <div class="stat"><div class="k">routed today</div><div class="v" id="stRouted">1,284</div></div>
+    <div class="stat"><div class="k">failover rate</div><div class="v">0.4<small>%</small></div></div>
+    <div class="stat"><div class="k">avg ttft</div><div class="v" id="stTtft">0.72<small>s</small></div></div>
+    <div class="stat"><div class="k">pool health</div><div class="v" id="stPool">4<small>/6</small></div></div>
+    <div class="stat"><div class="k">burn today</div><div class="v" id="stBurn">$1.92</div></div>
+  </div>
+
+  <div class="grid">
+    <div class="panel">
+      <div class="panel-head"><h2>Routing feed</h2><small>auto-scrolling</small></div>
+      <div class="feed" id="feed"></div>
+    </div>
+    <div class="panel">
+      <div class="panel-head"><h2>Key rack</h2><small>highlighted = serves next</small></div>
+      <div class="rack" id="rack"></div>
+    </div>
+  </div>
+
+  <div class="steps">
+    <div class="step"><div class="n mono">01 / SELECT</div><h3>Pick by strategy</h3>
+      <p>Choose a key by <code>priority</code>, <code>round-robin</code> or <code>weighted</code> — always skipping keys in cooldown or over budget.</p></div>
+    <div class="step"><div class="n mono">02 / DETECT</div><h3>Classify failure</h3>
+      <p><code>401/403</code> disables the key permanently and flags it in admin. <code>429/5xx</code> starts a 60s cooldown; the request retries on the next key mid-stream.</p></div>
+    <div class="step"><div class="n mono">03 / RECOVER</div><h3>Self-heal</h3>
+      <p>Expired cooldowns rejoin the pool automatically. Monthly budget caps are the final guard — exhausted keys are skipped until reset.</p></div>
+  </div>
+</div>
+
+<div class="foot-line mono">© 2026 AEOX — aeox.uk · this console is a local simulation, no upstream calls are made</div>
+
+<script>
+(function () {
+  'use strict';
+  var POOL = [
+    { prov:'deepseek', n:1, key:'sk-ds-***…9f3a', prio:1, status:'up', sr:99.7, req:642, budget:64 },
+    { prov:'deepseek', n:2, key:'sk-ds-***…c21b', prio:2, status:'up', sr:99.5, req:411, budget:38 },
+    { prov:'qwen', n:3, key:'sk-qw-***…77e0', prio:1, status:'cooldown', coolUntil:Date.now() + 42000, sr:97.9, req:118, budget:12 },
+    { prov:'qwen', n:4, key:'sk-qw-***…b4d2', prio:2, status:'up', sr:99.2, req:96, budget:9 },
+    { prov:'groq', n:5, key:'gsk_***…8ac1', prio:3, status:'up', sr:100, req:17, budget:2 },
+    { prov:'openrouter', n:6, key:'sk-or-***…d5f9', prio:4, status:'disabled', sr:0, req:0, budget:0 }
+  ];
+  var strategy = 'priority', rrIdx = 0, routed = 1284, burnCents = 192, ttfts = [];
+  var nextKey = null;
+
+  function $(id) { return document.getElementById(id); }
+  function rnd(n) { return Math.floor(Math.random() * n); }
+  function activeKeys() { return POOL.filter(function(k){ return k.status === 'up'; }); }
+  function keyLabel(k) { return k.prov + '#' + String(k.n).padStart(2, '0'); }
+
+  var SEG_DESC = {
+    priority: 'always drain the highest-priority healthy key first; lower priorities only serve as failover',
+    rr: 'cycle through healthy keys evenly — best for spreading provider rate limits',
+    weighted: 'distribute by weight, e.g. 60/30/10 across providers by cost'
+  };
+
+  function pickNext() {
+    var act = activeKeys();
+    if (!act.length) return null;
+    if (strategy === 'priority') {
+      act.sort(function(a, b){ return a.prio - b.prio || a.n - b.n; });
+      return act[0];
+    }
+    if (strategy === 'rr') { rrIdx = (rrIdx + 1) % act.length; return act[rrIdx]; }
+    return act[rnd(act.length)];
+  }
+
+  function renderRack() {
+    var box = $('rack');
+    box.innerHTML = '';
+    POOL.forEach(function(k) {
+      var d = document.createElement('div');
+      d.className = 'kcard' + (k === nextKey ? ' next' : '') + (k.status === 'disabled' ? ' off' : '');
+      var dot = k.status === 'up' ? 'up' : (k.status === 'cooldown' ? 'warn' : 'down');
+      var meta;
+      if (k.status === 'cooldown') {
+        var s = Math.max(0, Math.ceil((k.coolUntil - Date.now()) / 1000));
+        meta = '<span class="cd">cooldown ' + s + 's</span><span>P' + k.prio + '</span>';
+      } else if (k.status === 'disabled') {
+        meta = '<span style="color:var(--down)">401 · disabled</span><span>P' + k.prio + '</span>';
+      } else {
+        meta = '<span>P' + k.prio + ' · <b>' + k.req + '</b> req</span><span>' + k.sr.toFixed(1) + '% ok</span>';
+      }
+      var hbarCls = k.sr >= 99 ? '' : ' warn';
+      d.innerHTML =
+        (k === nextKey ? '<div class="next-tag mono">NEXT</div>' : '') +
+        '<div class="prov"><i class="kdot ' + dot + '"></i>' + k.prov + ' #' + String(k.n).padStart(2, '0') + '</div>' +
+        '<div class="kk">' + k.key + '</div>' +
+        '<div class="meta mono">' + meta + '</div>' +
+        '<div class="hbar"><i class="' + hbarCls.trim() + '" style="width:' + Math.max(2, k.sr) + '%"></i></div>';
+      box.appendChild(d);
+    });
+  }
+
+  function ts() { return new Date().toTimeString().slice(0, 8); }
+  function feed(kind, msg) {
+    var el = $('feed');
+    var row = document.createElement('div');
+    row.className = 'frow';
+    row.innerHTML = '<span class="ft">' + ts() + '</span><span class="fk ' + kind + '">' + kind.toUpperCase() + '</span><span class="fm">' + msg + '</span>';
+    el.insertBefore(row, el.firstChild);
+    while (el.children.length > 30) el.removeChild(el.lastChild);
+  }
+
+  function updateStats() {
+    $('sbPool').textContent = activeKeys().length + '/' + POOL.length;
+    $('stPool').innerHTML = activeKeys().length + '<small>/' + POOL.length + '</small>';
+    $('sbRouted').textContent = routed.toLocaleString();
+    $('stRouted').textContent = routed.toLocaleString();
+    $('sbBurn').textContent = '$' + (burnCents / 100).toFixed(2);
+    $('stBurn').textContent = '$' + (burnCents / 100).toFixed(2);
+    if (ttfts.length) {
+      var avg = ttfts.reduce(function(a, b){ return a + b; }, 0) / ttfts.length;
+      $('stTtft').innerHTML = (avg / 1000).toFixed(2) + '<small>s</small>';
+    }
+  }
+
+  $('seg').addEventListener('click', function(e) {
+    var b = e.target.closest('button');
+    if (!b) return;
+    strategy = b.getAttribute('data-s');
+    var all = $('seg').querySelectorAll('button');
+    for (var i = 0; i < all.length; i++) all[i].classList.remove('active');
+    b.classList.add('active');
+    $('segDesc').textContent = SEG_DESC[strategy];
+    nextKey = pickNext();
+    renderRack();
+    feed('route', 'strategy → <b>' + strategy + '</b> · next: <b>' + (nextKey ? keyLabel(nextKey) : 'none') + '</b>');
+  });
+  $('segDesc').textContent = SEG_DESC.priority;
+
+  setInterval(function() {
+    var changed = false;
+    POOL.forEach(function(k) {
+      if (k.status === 'cooldown' && Date.now() >= k.coolUntil) {
+        k.status = 'up'; k.sr = 99.1; changed = true;
+        feed('recovered', keyLabel(k) + ' cooldown expired — <b>rejoined pool</b>');
+      }
+    });
+    if (changed) { nextKey = pickNext(); }
+  }, 1000);
+
+  setInterval(function() {
+    var r = Math.random();
+    if (r < 0.68) {
+      nextKey = pickNext() || nextKey;
+      if (nextKey) {
+        var ms = 400 + rnd(620);
+        var tok = 150 + rnd(700);
+        nextKey.req++;
+        routed++; burnCents += rnd(4);
+        ttfts.push(ms); if (ttfts.length > 40) ttfts.shift();
+        feed('route', 'req #' + (1100 + routed % 900) + ' → <b>' + keyLabel(nextKey) + '</b> · 200 · ' + ms + 'ms · ' + tok + ' tok');
+      }
+    } else if (r < 0.78 && nextKey) {
+      feed('failover', '429 on <b>' + keyLabel(nextKey) + '</b> → retried on next key · 200');
+    } else if (r < 0.86) {
+      var act = activeKeys();
+      if (act.length > 1) {
+        var victim = act[rnd(act.length)];
+        victim.status = 'cooldown';
+        victim.coolUntil = Date.now() + 60000;
+        victim.sr = 97.5;
+        feed('cooldown', '<b>' + keyLabel(victim) + '</b> entering 60s cooldown (rate limit)');
+        nextKey = pickNext();
+      }
+    } else if (r < 0.93) {
+      feed('recovered', 'health check passed — pool nominal');
+    } else {
+      feed('budget', 'key at <b>' + (60 + rnd(35)) + '%</b> of monthly budget');
+    }
+    updateStats();
+    renderRack();
+  }, 1400);
+
+  nextKey = pickNext();
+  renderRack();
+  updateStats();
+  feed('route', 'engine online · strategy <b>priority</b> · 6 keys registered (1 disabled)');
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,28 @@
+aeox-chat 部署指南（Hostinger Web App）
+========================================
+
+包内容（运行必需，零 npm install）
+----------------------------------
+  dist/index.js     服务端全量打包产物（含 Hono，无外部依赖）
+  public/            前端页面与构建产物（hub/chat/engine/admin + assets）
+  demo/              概念演示页（挂 /demo 路径）
+  package.json       仅用于 npm start 启动脚本
+  .env.example       环境变量样例（真实值见 生产环境变量.txt，面板里配）
+
+部署步骤
+--------
+1. Hostinger 面板 → Web Applications → 新建应用，上传本包（或关联 git 仓库）
+2. Node.js 版本：选 >= 22.5（依赖内置 node:sqlite，低于此版本无法启动）
+3. 启动命令：npm start
+4. 环境变量（面板里逐条配置，值见随附的 生产环境变量.txt）：
+   ADMIN_PASSWORD / SESSION_SECRET / MASTER_KEY / BASE_URL=https://chat.aeox.uk
+5. 绑定自定义域名 chat.aeox.uk，按面板给出的 A/CNAME 记录到 DNS 处配置，SSL 自动签发
+6. 启动成功后：首次自动建库 + seed（不要上传本地 data/ 目录）
+7. 登录 https://chat.aeox.uk/admin（密码 = ADMIN_PASSWORD）→ 重录各家 API Key
+8. 冒烟：完整对话一次 / /engine 脱敏面板 / /robots.txt / /sitemap.xml / /llms.txt / /ai.txt
+
+注意
+----
+- 服务器上不存在"管理员账户"概念，唯一凭据就是 ADMIN_PASSWORD 这一个密码
+- 日常迭代：重新构建后替换 dist/ 与 public/ 即可，数据库不受影响
+- 想清空全部数据：停应用 → 删 data/aeox-chat.db → 重启（自动重建）
